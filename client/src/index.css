@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 20% -20%, rgba(37, 99, 235, 0.14), transparent 40%),
+    radial-gradient(circle at 90% 0%, rgba(16, 185, 129, 0.08), transparent 30%),
+    #09090b;
+  color: #e4e4e7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Dark-theme compatibility for legacy light utility classes still used in pages */
+#root .text-gray-800 { color: #f4f4f5; }
+#root .text-gray-700 { color: #e4e4e7; }
+#root .text-gray-600 { color: #a1a1aa; }
+#root .text-gray-500 { color: #71717a; }
+#root .text-gray-400 { color: #71717a; }
+
+#root .bg-white { background-color: rgba(24, 24, 27, 0.9); }
+#root .bg-gray-50 { background-color: rgba(24, 24, 27, 0.78); }
+#root .bg-gray-100 { background-color: rgba(39, 39, 42, 0.92); }
+#root .bg-gray-200 { background-color: rgba(63, 63, 70, 0.92); }
+#root .bg-blue-50 { background-color: rgba(24, 24, 27, 0.78); }
+#root .bg-green-50 { background-color: rgba(20, 83, 45, 0.25); }
+#root .bg-blue-100 { background-color: rgba(30, 58, 138, 0.35); }
+#root .bg-green-100 { background-color: rgba(22, 101, 52, 0.35); }
+#root .bg-yellow-100 { background-color: rgba(113, 63, 18, 0.35); }
+#root .bg-red-100 { background-color: rgba(127, 29, 29, 0.35); }
+
+#root .text-green-700 { color: #86efac; }
+#root .text-blue-800 { color: #bfdbfe; }
+#root .text-green-800 { color: #bbf7d0; }
+#root .text-yellow-800 { color: #fde68a; }
+#root .text-red-800 { color: #fecaca; }
+
+#root .border-green-200 { border-color: rgba(74, 222, 128, 0.45); }
+#root .border-blue-200 { border-color: rgba(96, 165, 250, 0.35); }
+#root .border-gray-200 { border-color: rgba(82, 82, 91, 0.6); }
+
+#root .from-blue-50 {
+  --tw-gradient-from: rgba(24, 24, 27, 0.82) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgba(24, 24, 27, 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+#root .to-indigo-50 {
+  --tw-gradient-to: rgba(39, 39, 42, 0.82) var(--tw-gradient-to-position);
+}
+
+#root .hover\:bg-gray-50:hover { background-color: rgba(63, 63, 70, 0.35); }
+#root .bg-gray-400 { background-color: #52525b; }
+#root .hover\:bg-gray-500:hover { background-color: #71717a; }
+#root .bg-gray-500 { background-color: #52525b; }
+#root .hover\:bg-gray-600:hover { background-color: #71717a; }
+
+#root input,
+#root select,
+#root textarea {
+  background-color: #18181b;
+  color: #f4f4f5;
+  border: 1px solid #3f3f46;
+}
+
+#root input::placeholder,
+#root textarea::placeholder {
+  color: #71717a;
+}
+
+#root input:focus,
+#root select:focus,
+#root textarea:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+}
+
+#root input[type="date"] {
+  color-scheme: dark;
+}
+
+#root table th {
+  color: #d4d4d8;
+  font-weight: 600;
+}
+
+#root table td {
+  color: #e4e4e7;
+}

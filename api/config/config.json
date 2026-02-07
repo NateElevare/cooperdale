@@ -1,0 +1,33 @@
+{
+  "development": {
+    "username": "cooperdale",
+    "password": "c0OperD@le!",
+    "database": "cooperdale",
+    "host": "localhost",
+    "port": 3306,
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "MarioMan1988!",
+    "database": "cooperdale",
+    "host": "34.162.223.179",
+    "port": 3306,
+    "dialect": "mysql",
+    "dialectOptions": {
+      "ssl": {
+        "rejectUnauthorized": true,
+        "caFile": "server-ca (4).pem",
+        "certFile": "client-cert (2).pem",
+        "keyFile": "client-key (2).pem"
+      }
+    }
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
