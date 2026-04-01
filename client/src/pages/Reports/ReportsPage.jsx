@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import MemberDirectory from "./MemberDirectory/MemberDirectory";
 import AttendanceReport from "./AttendanceReport/AttendanceReport";
 import AgeGroupCards from "./Stats/AgeGroupCards";
+import QuarterlySummaryTable from "./Stats/QuarterlySummaryTable";
 import MonthlySummaryTable from "./Stats/MonthlySummaryTable";
 import MemberFrequencyTable from "./Stats/MemberFrequencyTable";
 import { calculateAge, getAgeGroup } from "../../utils/dateUtils";
@@ -10,9 +11,9 @@ import { downloadCsv } from "../../utils/csv";
 import {
   buildMemberFrequency,
   buildMonthlyReports,
+  buildQuarterlyReports,
   buildReportsByAge,
   filterAttendance,
-  filterMembers,
 } from "../../utils/reportUtils";
 
 export default function ReportsPage({ members, events, attendance }) {
@@ -44,14 +45,14 @@ export default function ReportsPage({ members, events, attendance }) {
     [attendance, events]
   );
 
+  const quarterlyReports = useMemo(
+    () => buildQuarterlyReports(members, attendance, events),
+    [members, attendance, events]
+  );
+
   const memberFrequency = useMemo(
     () => buildMemberFrequency(members, attendance),
     [members, attendance]
-  );
-
-  const filteredDirectoryMembers = useMemo(
-    () => filterMembers(members, directoryFilters),
-    [members, directoryFilters]
   );
 
   const filteredAttendance = useMemo(
@@ -85,27 +86,6 @@ export default function ReportsPage({ members, events, attendance }) {
   const eventById = useMemo(
     () => Object.fromEntries(events.map((event) => [event.id, event])),
     [events]
-  );
-
-  const directoryExportRows = useMemo(
-    () =>
-      filteredDirectoryMembers.map((member) => ({
-        name: member.name || "",
-        firstName: member.firstName || "",
-        lastName: member.lastName || "",
-        email: member.email || "",
-        phone: member.phone || "",
-        street: member.street || "",
-        city: member.city || "",
-        state: member.state || "",
-        zip: member.zip || "",
-        age: calculateAge(member.birthDate),
-        birthDate: member.birthDate || "",
-        membershipDate: member.membershipDate || "",
-        baptized: member.baptized ? "Yes" : "No",
-        baptismDate: member.baptismDate || "",
-      })),
-    [filteredDirectoryMembers]
   );
 
   const attendanceExportRows = useMemo(
@@ -151,6 +131,21 @@ export default function ReportsPage({ members, events, attendance }) {
     [monthlyReports]
   );
 
+  const quarterlyExportRows = useMemo(
+    () =>
+      quarterlyReports.map((row) => ({
+        quarter: row.quarterLabel,
+        newMembers: row.newMembers,
+        totalMembers: row.totalMembers,
+        eventsHeld: row.eventsHeld,
+        totalAttendance: row.totalAttendance,
+        uniqueAttendees: row.uniqueAttendees,
+        avgAttendancePerEvent: row.avgAttendancePerEvent,
+        memberParticipationRate: row.memberParticipationRate,
+      })),
+    [quarterlyReports]
+  );
+
   const memberFrequencyExportRows = useMemo(
     () =>
       memberFrequency.map((member) => ({
@@ -169,41 +164,29 @@ export default function ReportsPage({ members, events, attendance }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm hover:bg-zinc-800"
-          onClick={() =>
-            downloadCsv(
-              "member-directory.csv",
-              [
-                { key: "name", label: "Name" },
-                { key: "firstName", label: "First Name" },
-                { key: "lastName", label: "Last Name" },
-                { key: "email", label: "Email" },
-                { key: "phone", label: "Phone" },
-                { key: "street", label: "Street" },
-                { key: "city", label: "City" },
-                { key: "state", label: "State" },
-                { key: "zip", label: "Zip" },
-                { key: "age", label: "Age" },
-                { key: "birthDate", label: "Birth Date" },
-                { key: "membershipDate", label: "Member Since" },
-                { key: "baptized", label: "Baptized" },
-                { key: "baptismDate", label: "Baptism Date" },
-              ],
-              directoryExportRows
-            )
-          }
-        >
-          Export Member Directory CSV
-        </button>
-      </div>
-
       <MemberDirectory
         members={members}
         filters={directoryFilters}
         setFilters={setDirectoryFilters}
+      />
+
+      <AttendanceReport
+        members={members}
+        events={events}
+        attendance={attendance}
+        filteredAttendance={filteredAttendance}
+        selectedEventFilter={selectedEventFilter}
+        setSelectedEventFilter={setSelectedEventFilter}
+        ageFilter={ageFilter}
+        setAgeFilter={setAgeFilter}
+        dateFilterType={dateFilterType}
+        setDateFilterType={setDateFilterType}
+        singleDate={singleDate}
+        setSingleDate={setSingleDate}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
       />
 
       <div className="flex justify-end">
@@ -232,24 +215,7 @@ export default function ReportsPage({ members, events, attendance }) {
         </button>
       </div>
 
-      <AttendanceReport
-        members={members}
-        events={events}
-        attendance={attendance}
-        filteredAttendance={filteredAttendance}
-        selectedEventFilter={selectedEventFilter}
-        setSelectedEventFilter={setSelectedEventFilter}
-        ageFilter={ageFilter}
-        setAgeFilter={setAgeFilter}
-        dateFilterType={dateFilterType}
-        setDateFilterType={setDateFilterType}
-        singleDate={singleDate}
-        setSingleDate={setSingleDate}
-        startDate={startDate}
-        setStartDate={setStartDate}
-        endDate={endDate}
-        setEndDate={setEndDate}
-      />
+      <AgeGroupCards reportsByAge={reportsByAge} />
 
       <div className="flex justify-end">
         <button
@@ -272,7 +238,34 @@ export default function ReportsPage({ members, events, attendance }) {
         </button>
       </div>
 
-      <AgeGroupCards reportsByAge={reportsByAge} />
+      <QuarterlySummaryTable quarterlyReports={quarterlyReports} />
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm hover:bg-zinc-800"
+          onClick={() =>
+            downloadCsv(
+              "quarterly-membership-attendance.csv",
+              [
+                { key: "quarter", label: "Quarter" },
+                { key: "newMembers", label: "New Members" },
+                { key: "totalMembers", label: "Total Members" },
+                { key: "eventsHeld", label: "Events Held" },
+                { key: "totalAttendance", label: "Total Attendance" },
+                { key: "uniqueAttendees", label: "Unique Attendees" },
+                { key: "avgAttendancePerEvent", label: "Avg Attendance / Event" },
+                { key: "memberParticipationRate", label: "Participation Rate" },
+              ],
+              quarterlyExportRows
+            )
+          }
+        >
+          Export Quarterly Report CSV
+        </button>
+      </div>
+
+      <MonthlySummaryTable monthlyReports={monthlyReports} />
 
       <div className="flex justify-end">
         <button
@@ -295,7 +288,7 @@ export default function ReportsPage({ members, events, attendance }) {
         </button>
       </div>
 
-      <MonthlySummaryTable monthlyReports={monthlyReports} />
+      <MemberFrequencyTable members={memberFrequency} />
 
       <div className="flex justify-end">
         <button
@@ -317,8 +310,6 @@ export default function ReportsPage({ members, events, attendance }) {
           Export Member Frequency CSV
         </button>
       </div>
-
-      <MemberFrequencyTable members={memberFrequency} />
     </div>
   );
 }

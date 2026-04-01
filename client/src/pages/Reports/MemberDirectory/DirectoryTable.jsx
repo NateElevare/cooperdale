@@ -2,9 +2,9 @@ import { calculateAge } from "../../../utils/dateUtils";
 
 export default function DirectoryTable({ members }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100">
+    <div className="max-h-[32rem] overflow-auto rounded-lg border border-gray-200">
+      <table className="w-full min-w-[900px] text-sm">
+        <thead className="sticky top-0 z-10 bg-gray-100 shadow-sm">
           <tr>
             <th className="px-3 py-2 text-left">Name</th>
             <th className="px-3 py-2 text-left">Email</th>
