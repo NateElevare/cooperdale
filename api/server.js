@@ -5,6 +5,20 @@ const mysql = require('mysql2/promise');
 const { sequelize, User } = require('./models');
 const { authenticateToken } = require('./middleware/auth');
 const configByEnv = require('./config/config.js');
+const fs = require('fs');
+const path = require('path');
+
+const logFile = fs.createWriteStream(path.join(__dirname, 'app.log'), { flags: 'a' });
+function log(...args) {
+  const line = `[${new Date().toISOString()}] ${args.join(' ')}`;
+  console.log(line);
+  logFile.write(line + '\n');
+}
+function logError(...args) {
+  const line = `[${new Date().toISOString()}] ERROR: ${args.join(' ')}`;
+  console.error(line);
+  logFile.write(line + '\n');
+}
 
 const app = express();
 const PORT = 5050;
@@ -15,11 +29,11 @@ const dbConfig = configByEnv[env];
 
 // Do NOT exit here; just log so you can see the real problem
 process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
+  logError('Unhandled Rejection:', reason);
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+  logError('Uncaught Exception:', err);
 });
 
 app.use(cors());
@@ -27,7 +41,7 @@ app.use(express.json());
 
 // Request logger (should never crash)
 app.use((req, res, next) => {
-  console.log('REQUEST:', req.method, req.url);
+  log('REQUEST:', req.method, req.url);
   next();
 });
 
@@ -76,7 +90,7 @@ async function ensureBootstrapAdmin() {
     const tables = tablesRaw.map((t) => String(t).toLowerCase());
 
     if (!tables.includes('users')) {
-      console.warn('Users table not found. Run migrations to enable login/auth.');
+      logError('Users table not found. Run migrations to enable login/auth.');
       return;
     }
 
@@ -96,12 +110,12 @@ async function ensureBootstrapAdmin() {
       isActive: true,
     });
 
-    console.warn(`Bootstrap admin created: username="${username}"`);
+    log(`Bootstrap admin created: username="${username}"`);
     if (!process.env.ADMIN_PASSWORD) {
-      console.warn(`Bootstrap admin password="${ADMIN_DEFAULT_PASSWORD}" (change this immediately).`);
+      log(`Bootstrap admin password="${ADMIN_DEFAULT_PASSWORD}" (change this immediately).`);
     }
   } catch (e) {
-    console.error('Failed to ensure bootstrap admin:', e);
+    logError('Failed to ensure bootstrap admin:', e);
   }
 }
 
@@ -122,12 +136,12 @@ try {
   app.use('/api/attendance', authenticateToken, attendanceRoutes);
   app.use('/api/messages', authenticateToken, messagesRoutes);
 } catch (e) {
-  console.error('Failed to load routes:', e);
+  logError('Failed to load routes:', e);
 }
 
 // Express error middleware (must be last)
 app.use((err, req, res, next) => {
-  console.error('Express error middleware:', err);
+  logError('Express error middleware:', err);
   if (res.headersSent) return next(err);
   res.status(500).json({ error: 'Internal server error' });
 });
@@ -137,11 +151,11 @@ async function start() {
   await ensureBootstrapAdmin();
 
   const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server listening on ${PORT}`);
+    log(`Server listening on ${PORT}`);
   });
 
   server.on('error', (err) => {
-    console.error('Server listen error:', err);
+    logError('Server listen error:', err);
   });
 }
 
