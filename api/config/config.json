@@ -24,10 +24,10 @@
     }
   },
   "production": {
-    "username": "root",
-    "password": null,
-    "database": "database_production",
+    "username": "wp_cr5xm",
+    "password": "3L1~k9xq6",
+    "database": "wp_txkub",
     "host": "127.0.0.1",
-    "dialect": "mysql"
+    "dialect": "mariadb"
   }
 }
