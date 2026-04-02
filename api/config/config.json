@@ -28,6 +28,6 @@
     "password": "$#8TsPIdsa5ctqk5",
     "database": "tracker_cooperdale",
     "host": "127.0.0.1",
-    "dialect": "mariadb"
+    "dialect": "mysql"
   }
 }
