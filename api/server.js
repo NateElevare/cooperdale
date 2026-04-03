@@ -80,7 +80,6 @@ async function ensureDatabaseAndTables() {
   }
 
   await sequelize.authenticate();
-  await sequelize.sync();
 }
 
 async function ensureBootstrapAdmin() {
