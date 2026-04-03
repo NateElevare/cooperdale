@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { Attendance, Member, Event } = require('../models');
 const { toIsoDateOnly } = require('../utils/dateOnly'); // same helper used everywhere
+const { logError } = require('../utils/logger');
 
 router.get('/', async (req, res) => {
   try {
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
 
     res.json(attendance);
   } catch (err) {
-    console.error(err);
+    logError(err);
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
 });
@@ -69,7 +70,7 @@ router.post('/', async (req, res) => {
     if (err.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: 'Attendance record already exists' });
     }
-    console.error(err);
+    logError(err);
     res.status(500).json({ error: 'Failed to create attendance record' });
   }
 });
@@ -89,7 +90,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    logError(err);
     res.status(500).json({ error: 'Failed to delete attendance record' });
   }
 });

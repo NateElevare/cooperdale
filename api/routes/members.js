@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 const { Member, Attendance, MemberRelationship } = require('../models');
-const { toIsoDateOnly } = require('../utils/dateOnly'); 
-const normalizeName = (s) => (s || '').trim(); 
+const { toIsoDateOnly } = require('../utils/dateOnly');
+const normalizeName = (s) => (s || '').trim();
+const { logError } = require('../utils/logger');
 
 const RELATION_TYPES = [
   'spouse',
@@ -43,7 +44,7 @@ router.get('/', async (req, res) => {
     const members = await Member.findAll({ order: [['id', 'DESC']] });
     res.json(members);
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to fetch members' });
   }
 });
@@ -98,7 +99,7 @@ router.post('/', async (req, res) => {
     if (e.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: 'Member already exists' });
     }
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to create member' });
   }
 });
@@ -160,7 +161,7 @@ router.get('/:id/relationships', async (req, res) => {
 
     res.json(relationships);
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to fetch relationships' });
   }
 });
@@ -222,7 +223,7 @@ router.post('/:id/relationships', async (req, res) => {
     if (e.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ error: 'Relationship already exists' });
     }
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to create relationship' });
   }
 });
@@ -261,7 +262,7 @@ router.delete('/:id/relationships/:relationshipId', async (req, res) => {
 
     res.json({ success: true });
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to delete relationship' });
   }
 });
@@ -296,7 +297,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to update member' });
   }
 });
@@ -317,7 +318,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to delete member' });
   }
 });

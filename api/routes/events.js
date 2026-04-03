@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { Event } = require('../models');
 const { toIsoDateOnly } = require('../utils/dateOnly');
+const { logError } = require('../utils/logger');
 
 router.get('/', async (req, res) => {
   try {
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
 
     res.json(events);
   } catch (err) {
-    console.error(err);
+    logError(err);
     res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
@@ -37,7 +38,7 @@ router.post('/', async (req, res) => {
 
     res.json({ id: event.id });
   } catch (err) {
-    console.error(err);
+    logError(err);
     res.status(500).json({ error: 'Failed to create event' });
   }
 });
@@ -67,7 +68,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    logError(err);
     res.status(500).json({ error: 'Failed to update event' });
   }
 });
@@ -87,7 +88,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    logError(err);
     res.status(500).json({ error: 'Failed to delete event' });
   }
 });

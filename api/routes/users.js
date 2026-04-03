@@ -4,6 +4,7 @@ const router = express.Router();
 
 const { User } = require('../models');
 const { requireAdmin } = require('../middleware/auth');
+const { logError } = require('../utils/logger');
 
 const SALT_ROUNDS = 12;
 const ALLOWED_ROLES = new Set(['admin', 'editor']);
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
     });
     res.json(users);
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -59,7 +60,7 @@ router.post('/', async (req, res) => {
       createdAt: user.createdAt,
     });
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to create user' });
   }
 });
@@ -108,7 +109,7 @@ router.put('/:id', async (req, res) => {
       createdAt: user.createdAt,
     });
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
@@ -134,7 +135,7 @@ router.put('/:id/password', async (req, res) => {
     await user.update({ passwordHash });
     res.json({ success: true });
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to reset password' });
   }
 });

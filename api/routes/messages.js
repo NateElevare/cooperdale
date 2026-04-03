@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const router = express.Router();
 
 const { Message, User } = require('../models');
+const { logError } = require('../utils/logger');
 
 const MAX_BODY_LENGTH = 2000;
 const DEFAULT_LIMIT = 100;
@@ -31,7 +32,7 @@ router.get('/users', async (req, res) => {
     });
     res.json(users);
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to fetch message users' });
   }
 });
@@ -80,7 +81,7 @@ router.get('/thread/:otherUserId', async (req, res) => {
 
     res.json(messages.map(sanitizeMessage));
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to fetch thread' });
   }
 });
@@ -119,7 +120,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json(sanitizeMessage(message));
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to send message' });
   }
 });

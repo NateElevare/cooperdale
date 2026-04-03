@@ -5,20 +5,7 @@ const mysql = require('mysql2/promise');
 const { sequelize, User } = require('./models');
 const { authenticateToken } = require('./middleware/auth');
 const configByEnv = require('./config/config.js');
-const fs = require('fs');
-const path = require('path');
-
-const logFile = fs.createWriteStream(path.join(__dirname, 'app.log'), { flags: 'a' });
-function log(...args) {
-  const line = `[${new Date().toISOString()}] ${args.join(' ')}`;
-  console.log(line);
-  logFile.write(line + '\n');
-}
-function logError(...args) {
-  const line = `[${new Date().toISOString()}] ERROR: ${args.join(' ')}`;
-  console.error(line);
-  logFile.write(line + '\n');
-}
+const { log, logError } = require('./utils/logger');
 
 const app = express();
 const PORT = 5050;

@@ -4,6 +4,7 @@ const router = express.Router();
 
 const { User } = require('../models');
 const { signAuthToken, authenticateToken } = require('../middleware/auth');
+const { logError } = require('../utils/logger');
 
 function sanitizeUser(user) {
   return {
@@ -40,7 +41,7 @@ router.post('/login', async (req, res) => {
     const token = signAuthToken(user);
     res.json({ token, user: sanitizeUser(user) });
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to login' });
   }
 });
@@ -53,7 +54,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     }
     res.json(sanitizeUser(user));
   } catch (e) {
-    console.error(e);
+    logError(e);
     res.status(500).json({ error: 'Failed to load current user' });
   }
 });
