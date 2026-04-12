@@ -1,9 +1,16 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 
 const { Attendance, Member, Event } = require('../models');
 const { toIsoDateOnly } = require('../utils/dateOnly'); // same helper used everywhere
-const { logError } = require('../utils/logger');
+
+function logError(...args) {
+  const line = `[${new Date().toISOString()}] ERROR: ${args.map(a => a instanceof Error ? a.stack : String(a)).join(' ')}\n`;
+  try { fs.appendFileSync(path.join(__dirname, '../debug.log'), line); } catch(_) {}
+  console.error(line);
+}
 
 router.get('/', async (req, res) => {
   try {
