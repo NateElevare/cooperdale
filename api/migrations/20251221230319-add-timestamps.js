@@ -2,41 +2,8 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // MEMBERS
-    await queryInterface.addColumn('members', 'createdAt', {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-    });
-    await queryInterface.addColumn('members', 'updatedAt', {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-    });
-
-    // EVENTS
-    await queryInterface.addColumn('events', 'createdAt', {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-    });
-    await queryInterface.addColumn('events', 'updatedAt', {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-    });
-
-    // ATTENDANCE
-    await queryInterface.addColumn('attendance', 'createdAt', {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-    });
-    await queryInterface.addColumn('attendance', 'updatedAt', {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-    });
+    // Timestamps are already included in the create-member, create-event,
+    // and create-attendance migrations. This migration is a no-op.
   },
 
   async down(queryInterface, Sequelize) {
