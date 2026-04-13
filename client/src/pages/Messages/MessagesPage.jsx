@@ -198,6 +198,12 @@ export default function MessagesPage({ currentUser }) {
               <textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage(e);
+                  }
+                }}
                 className="min-h-[44px] flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
                 placeholder={selectedUser ? "Type your message..." : "Select a user first"}
                 maxLength={2000}
