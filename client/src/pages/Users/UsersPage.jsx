@@ -16,7 +16,88 @@ const DEFAULT_PERMISSIONS = Object.fromEntries(
   RESOURCES.map((r) => [r.key, { read: true, write: true }])
 );
 
-function PermissionsEditor({ userId, initial, onSave, onCancel }) {
+function ResetPasswordModal({ displayName, onSave, onCancel }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [localError, setLocalError] = useState("");
+
+  async function handleSave() {
+    if (password.length < 8) {
+      setLocalError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setLocalError("Passwords do not match.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(password);
+    } catch (e) {
+      setLocalError(e.message || "Failed to reset password.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <div className="w-full max-w-sm rounded-lg bg-zinc-900 p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-zinc-100 mb-4">Reset Password — {displayName}</h3>
+
+        {localError && (
+          <div className="rounded border border-red-700/50 bg-red-950/30 px-3 py-2 text-sm text-red-200 mb-3">
+            {localError}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">New Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setLocalError(""); }}
+              className="w-full px-3 py-2 rounded border border-zinc-700 bg-zinc-800 text-zinc-100"
+              placeholder="Min. 8 characters"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">Confirm Password</label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => { setConfirm(e.target.value); setLocalError(""); }}
+              className="w-full px-3 py-2 rounded border border-zinc-700 bg-zinc-800 text-zinc-100"
+              placeholder="Repeat password"
+              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={handleSave}
+            disabled={saving || !password || !confirm}
+            className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Reset Password"}
+          </button>
+          <button
+            onClick={onCancel}
+            className="rounded border border-zinc-700 px-4 py-2 text-sm hover:bg-zinc-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PermissionsEditor({ userId, displayName, initial, onSave, onCancel }) {
   const [perms, setPerms] = useState(() => {
     if (!initial) return DEFAULT_PERMISSIONS;
     // merge with defaults so all keys are present
@@ -51,55 +132,58 @@ function PermissionsEditor({ userId, initial, onSave, onCancel }) {
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 p-4">
-      <p className="text-xs text-zinc-400 mb-3">Permissions (ignored for admin users)</p>
-      <table className="text-sm w-full">
-        <thead>
-          <tr>
-            <th className="text-left py-1 pr-4 text-zinc-400 font-normal">Tab</th>
-            <th className="text-center py-1 px-3 text-zinc-400 font-normal">Read</th>
-            <th className="text-center py-1 px-3 text-zinc-400 font-normal">Write</th>
-          </tr>
-        </thead>
-        <tbody>
-          {RESOURCES.map((r) => (
-            <tr key={r.key} className="border-t border-zinc-800">
-              <td className="py-1.5 pr-4 text-zinc-200">{r.label}</td>
-              <td className="py-1.5 px-3 text-center">
-                <input
-                  type="checkbox"
-                  checked={!!perms[r.key]?.read}
-                  onChange={() => toggle(r.key, "read")}
-                  className="accent-blue-500"
-                />
-              </td>
-              <td className="py-1.5 px-3 text-center">
-                <input
-                  type="checkbox"
-                  checked={!!perms[r.key]?.write}
-                  onChange={() => toggle(r.key, "write")}
-                  disabled={!perms[r.key]?.read}
-                  className="accent-blue-500 disabled:opacity-40"
-                />
-              </td>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <div className="w-full max-w-sm rounded-lg bg-zinc-900 p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-zinc-100 mb-1">Permissions — {displayName}</h3>
+        <p className="text-xs text-zinc-400 mb-4">Ignored for admin users.</p>
+        <table className="text-sm w-full">
+          <thead>
+            <tr>
+              <th className="text-left py-1 pr-4 text-zinc-400 font-normal">Tab</th>
+              <th className="text-center py-1 px-3 text-zinc-400 font-normal">Read</th>
+              <th className="text-center py-1 px-3 text-zinc-400 font-normal">Write</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="flex gap-2 mt-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save Permissions"}
-        </button>
-        <button
-          onClick={onCancel}
-          className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:bg-zinc-800"
-        >
-          Cancel
-        </button>
+          </thead>
+          <tbody>
+            {RESOURCES.map((r) => (
+              <tr key={r.key} className="border-t border-zinc-800">
+                <td className="py-1.5 pr-4 text-zinc-200">{r.label}</td>
+                <td className="py-1.5 px-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={!!perms[r.key]?.read}
+                    onChange={() => toggle(r.key, "read")}
+                    className="accent-blue-500"
+                  />
+                </td>
+                <td className="py-1.5 px-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={!!perms[r.key]?.write}
+                    onChange={() => toggle(r.key, "write")}
+                    disabled={!perms[r.key]?.read}
+                    className="accent-blue-500 disabled:opacity-40"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+          <button
+            onClick={onCancel}
+            className="rounded border border-zinc-700 px-4 py-2 text-sm hover:bg-zinc-800"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -110,6 +194,7 @@ export default function UsersPage({ currentUser }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedPermissions, setExpandedPermissions] = useState(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
   const [newUser, setNewUser] = useState({
     username: "",
     displayName: "",
@@ -168,16 +253,9 @@ export default function UsersPage({ currentUser }) {
     setExpandedPermissions(null);
   };
 
-  const resetPassword = async (id) => {
-    const password = window.prompt("Enter a new password (minimum 8 characters):");
-    if (!password) return;
-    try {
-      setError("");
-      await UsersApi.resetPassword(id, password);
-      alert("Password reset successfully.");
-    } catch (e) {
-      setError(e.message || "Failed to reset password");
-    }
+  const resetPassword = async (id, password) => {
+    await UsersApi.resetPassword(id, password);
+    setResetPasswordUser(null);
   };
 
   if (loading) {
@@ -267,9 +345,9 @@ export default function UsersPage({ currentUser }) {
               <div className="flex gap-2">
                 <button
                   className="rounded border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
-                  onClick={() => setExpandedPermissions(expandedPermissions === u.id ? null : u.id)}
+                  onClick={() => setExpandedPermissions(u.id)}
                 >
-                  {expandedPermissions === u.id ? "Hide Permissions" : "Permissions"}
+                  Permissions
                 </button>
                 <button
                   className="rounded border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
@@ -281,7 +359,7 @@ export default function UsersPage({ currentUser }) {
                 </button>
                 <button
                   className="rounded border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
-                  onClick={() => resetPassword(u.id)}
+                  onClick={() => setResetPasswordUser(u)}
                 >
                   Reset PW
                 </button>
@@ -294,17 +372,32 @@ export default function UsersPage({ currentUser }) {
               </div>
             )}
 
-            {expandedPermissions === u.id && (
-              <PermissionsEditor
-                userId={u.id}
-                initial={u.permissions}
-                onSave={(perms) => savePermissions(u.id, perms)}
-                onCancel={() => setExpandedPermissions(null)}
-              />
-            )}
           </div>
         ))}
       </div>
+
+      {resetPasswordUser && (
+        <ResetPasswordModal
+          displayName={resetPasswordUser.displayName}
+          onSave={(pw) => resetPassword(resetPasswordUser.id, pw)}
+          onCancel={() => setResetPasswordUser(null)}
+        />
+      )}
+
+      {expandedPermissions !== null && (() => {
+        const u = users.find((x) => x.id === expandedPermissions);
+        if (!u) return null;
+        return (
+          <PermissionsEditor
+            key={u.id}
+            userId={u.id}
+            displayName={u.displayName}
+            initial={u.permissions}
+            onSave={(perms) => savePermissions(u.id, perms)}
+            onCancel={() => setExpandedPermissions(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
