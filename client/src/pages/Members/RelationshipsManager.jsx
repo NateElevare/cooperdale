@@ -6,23 +6,55 @@ const RELATION_OPTIONS = [
   "parent",
   "child",
   "sibling",
+  "step-parent",
+  "step-child",
+  "step-sibling",
   "guardian",
   "ward",
   "grandparent",
   "grandchild",
+  "great-grandparent",
+  "great-grandchild",
+  "aunt/uncle",
+  "niece/nephew",
+  "great-aunt/uncle",
+  "great-niece/nephew",
+  "mother-in-law",
+  "father-in-law",
+  "son-in-law",
+  "daughter-in-law",
+  "brother-in-law",
+  "sister-in-law",
+  "cousin",
   "other",
 ];
 
 const RELATION_LEVEL_DELTA = {
   spouse: 0,
   sibling: 0,
+  "step-sibling": 0,
+  "brother-in-law": 0,
+  "sister-in-law": 0,
+  cousin: 0,
   other: 0,
   parent: -1,
-  child: 1,
+  "step-parent": -1,
   guardian: -1,
+  "mother-in-law": -1,
+  "father-in-law": -1,
+  child: 1,
+  "step-child": 1,
   ward: 1,
+  "son-in-law": 1,
+  "daughter-in-law": 1,
   grandparent: -2,
+  "great-grandparent": -3,
+  "aunt/uncle": -1,
+  "great-aunt/uncle": -2,
   grandchild: 2,
+  "great-grandchild": 3,
+  "niece/nephew": 1,
+  "great-niece/nephew": 2,
 };
 
 function displayName(member) {
@@ -154,7 +186,9 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
     }
 
     const levelsById = new Map();
+    const subtitleById = new Map();
     levelsById.set(member.id, 0);
+    subtitleById.set(member.id, "you");
     const levelQueue = [member.id];
 
     while (levelQueue.length > 0) {
@@ -169,6 +203,7 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
         const proposed = currentLevel + delta;
         if (!levelsById.has(target)) {
           levelsById.set(target, proposed);
+          subtitleById.set(target, rel.relationType || "other");
           levelQueue.push(target);
         }
       });
@@ -176,6 +211,7 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
 
     nodeIds.forEach((id) => {
       if (!levelsById.has(id)) levelsById.set(id, 0);
+      if (!subtitleById.has(id)) subtitleById.set(id, "other");
     });
 
     const minAssignedLevel = Math.min(...Array.from(levelsById.values()));
@@ -192,7 +228,7 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
         key: String(id),
         id,
         label: displayName(membersById.get(id) || { id }),
-        subtitle: id === member.id ? "root" : `lvl ${level > 0 ? `+${level}` : level}`,
+        subtitle: subtitleById.get(id) || "other",
       });
     });
 

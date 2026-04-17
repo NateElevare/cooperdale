@@ -38,12 +38,16 @@ export default function EventsPage({ events, actions }) {
       </div>
 
       {showForm && (
-        <EventForm
-          event={newEvent}
-          setEvent={setNewEvent}
-          onSave={onSave}
-          onCancel={() => setShowForm(false)}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
+          <div className="max-h-[92vh] w-full max-w-lg overflow-auto rounded-lg bg-white p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <EventForm
+              event={newEvent}
+              setEvent={setNewEvent}
+              onSave={onSave}
+              onCancel={() => setShowForm(false)}
+            />
+          </div>
+        </div>
       )}
 
       <EventsList events={events} onDelete={onDelete} />

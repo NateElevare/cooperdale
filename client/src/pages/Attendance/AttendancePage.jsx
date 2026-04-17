@@ -82,14 +82,20 @@ export default function AttendancePage({ attendance, members, events, actions })
       </div>
 
       {showForm && (
-        <AttendanceForm
-          value={newAttendance}
-          onChange={setNewAttendance}
-          onSave={onAdd}
-          onCancel={() => setShowForm(false)}
-          members={members}
-          events={events}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <AttendanceForm
+              value={newAttendance}
+              onChange={setNewAttendance}
+              onSave={onAdd}
+              onCancel={() => setShowForm(false)}
+              members={members}
+              events={events}
+              attendance={attendance}
+              onAddMember={actions.addMember}
+            />
+          </div>
+        </div>
       )}
 
       <AttendanceTable

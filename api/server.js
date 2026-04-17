@@ -113,6 +113,7 @@ try {
   const eventsRoutes = require('./routes/events');
   const attendanceRoutes = require('./routes/attendance');
   const messagesRoutes = require('./routes/messages');
+  const followupsRoutes = require('./routes/followups');
 
   app.use('/api/auth', authRoutes);
   app.use('/api/users', authenticateToken, usersRoutes);
@@ -121,6 +122,7 @@ try {
   app.use('/api/events', authenticateToken, eventsRoutes);
   app.use('/api/attendance', authenticateToken, attendanceRoutes);
   app.use('/api/messages', authenticateToken, messagesRoutes);
+  app.use('/api/followups', authenticateToken, followupsRoutes);
 } catch (e) {
   logError('Failed to load routes:', e);
 }

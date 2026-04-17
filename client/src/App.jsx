@@ -6,6 +6,7 @@ import { MembersApi } from "./api/members";
 import { EventsApi } from "./api/events";
 import { AttendanceApi } from "./api/attendance";
 import { AuthApi } from "./api/auth";
+import { FollowupsApi } from "./api/followups";
 import { HttpError, setAuthToken, getAuthToken } from "./api/http";
 
 import MembersPage from "./pages/Members/MembersPage";
@@ -15,11 +16,13 @@ import ReportsPage from "./pages/Reports/ReportsPage";
 import LoginPage from "./pages/Auth/LoginPage";
 import UsersPage from "./pages/Users/UsersPage";
 import MessagesPage from "./pages/Messages/MessagesPage";
+import FollowUpPage from "./pages/FollowUp/FollowUpPage";
 
 export default function App() {
   const [members, setMembers] = useState([]);
   const [events, setEvents] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [followups, setFollowups] = useState([]);
 
   const [activeTab, setActiveTab] = useState("members");
   const [loading, setLoading] = useState(false);
@@ -33,20 +36,23 @@ export default function App() {
     setMembers([]);
     setEvents([]);
     setAttendance([]);
+    setFollowups([]);
     setActiveTab("members");
   }, []);
 
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
-      const [m, e, a] = await Promise.all([
+      const [m, e, a, f] = await Promise.all([
         MembersApi.list(),
         EventsApi.list(),
         AttendanceApi.list(),
+        FollowupsApi.list(),
       ]);
       setMembers(m);
       setEvents(e);
       setAttendance(a);
+      setFollowups(f);
     } catch (err) {
       console.error(err);
       if (err instanceof HttpError && err.status === 401) {
@@ -81,9 +87,10 @@ export default function App() {
 
   const tabs = useMemo(() => {
     const baseTabs = [
-      { id: "members", label: "Members" },
+      { id: "members", label: "Attendees" },
       { id: "events", label: "Events" },
       { id: "attendance", label: "Attendance" },
+      { id: "followup", label: "Follow Up" },
       { id: "messages", label: "Messages" },
       { id: "reports", label: "Reports" },
     ];
@@ -152,6 +159,14 @@ export default function App() {
         await AttendanceApi.remove(id);
         await fetchAll();
       },
+      addFollowup: async (data) => {
+        await FollowupsApi.create(data);
+        await fetchAll();
+      },
+      deleteFollowup: async (id) => {
+        await FollowupsApi.remove(id);
+        await fetchAll();
+      },
     };
   }, [fetchAll]);
 
@@ -191,12 +206,6 @@ export default function App() {
               </span>
               <button
                 className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800"
-                onClick={fetchAll}
-              >
-                Refresh
-              </button>
-              <button
-                className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800"
                 onClick={logout}
               >
                 Sign out
@@ -216,7 +225,7 @@ export default function App() {
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 shadow-xl">
           <div className="p-5 sm:p-6">
             {activeTab === "members" && (
-              <MembersPage members={members} actions={actions} />
+              <MembersPage members={members} actions={actions} attendance={attendance} events={events} />
             )}
             {activeTab === "events" && (
               <EventsPage events={events} actions={actions} />
@@ -234,6 +243,15 @@ export default function App() {
                 members={members}
                 events={events}
                 attendance={attendance}
+              />
+            )}
+            {activeTab === "followup" && (
+              <FollowUpPage
+                members={members}
+                attendance={attendance}
+                followups={followups}
+                actions={actions}
+                currentUser={currentUser}
               />
             )}
             {activeTab === "messages" && (
