@@ -33,6 +33,7 @@ module.exports = (sequelize, DataTypes) => {
     birthDate: DataTypes.DATEONLY,
     joinDate: DataTypes.DATEONLY,
     membershipDate: DataTypes.DATEONLY,
+    isMember: DataTypes.BOOLEAN,
     baptized: DataTypes.BOOLEAN,
     baptismDate: DataTypes.DATEONLY,
     street: DataTypes.STRING,

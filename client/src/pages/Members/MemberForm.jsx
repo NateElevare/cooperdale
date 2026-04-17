@@ -132,6 +132,17 @@ export default function MemberForm({
         <div className="flex items-center gap-2 pt-6">
           <input
             type="checkbox"
+            id="isMember"
+            checked={Boolean(value.isMember)}
+            onChange={(e) => onChange({ ...value, isMember: e.target.checked })}
+            className="w-4 h-4"
+          />
+          <label htmlFor="isMember" className="font-medium">Member</label>
+        </div>
+
+        <div className="flex items-center gap-2 pt-6">
+          <input
+            type="checkbox"
             id="baptized"
             checked={Boolean(value.baptized)}
             onChange={(e) => onChange({ ...value, baptized: e.target.checked })}

@@ -10,6 +10,7 @@ const emptyMember = () => ({
   birthDate: "",
   joinDate: new Date().toISOString().split("T")[0],
   membershipDate: "",
+  isMember: true,
   baptized: false,
   baptismDate: "",
   street: "",

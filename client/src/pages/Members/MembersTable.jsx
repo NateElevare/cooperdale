@@ -20,6 +20,7 @@ export default function MembersTable({
             <th className="px-4 py-3 text-left">Phone</th>
             <th className="px-4 py-3 text-left">Age</th>
             <th className="px-4 py-3 text-left">Member Since</th>
+            <th className="px-4 py-3 text-left">Member</th>
             <th className="px-4 py-3 text-left">Baptized</th>
             <th className="px-4 py-3 text-left">Actions</th>
           </tr>
@@ -57,6 +58,14 @@ export default function MembersTable({
                   <td className="px-4 py-3">{member.phone || "-"}</td>
                   <td className="px-4 py-3">{calculateAge(member.birthDate)}</td>
                   <td className="px-4 py-3">{member.membershipDate || "-"}</td>
+
+                  <td className="px-4 py-3">
+                    {member.isMember ? (
+                      <span className="text-green-600 font-medium">Yes</span>
+                    ) : (
+                      <span className="text-gray-400">No</span>
+                    )}
+                  </td>
 
                   <td className="px-4 py-3">
                     {member.baptized ? (
@@ -97,7 +106,7 @@ export default function MembersTable({
                 </tr>
                 {isRelationshipsOpen && (
                   <tr className="border-b bg-zinc-950/40">
-                    <td colSpan={8} className="px-4 py-3">
+                    <td colSpan={9} className="px-4 py-3">
                       <RelationshipsManager
                         member={member}
                         members={members}
