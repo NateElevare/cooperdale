@@ -3,9 +3,10 @@
 const express = require('express');
 const router = express.Router();
 const { Followup, Member, User } = require('../models');
+const { requirePermission } = require('../middleware/auth');
 const { logError } = require('../utils/logger');
 
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('followup', 'read'), async (req, res) => {
   try {
     const followups = await Followup.findAll({
       include: [
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('followup', 'write'), async (req, res) => {
   try {
     const { memberId, notes, followedUpAt, followedUpBy } = req.body;
 
@@ -37,7 +38,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('followup', 'write'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid id' });

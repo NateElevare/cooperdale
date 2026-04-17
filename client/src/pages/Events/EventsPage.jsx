@@ -8,7 +8,7 @@ const emptyEvent = () => ({
   date: new Date().toISOString().split("T")[0],
 });
 
-export default function EventsPage({ events, actions }) {
+export default function EventsPage({ events, actions, canWrite = true }) {
   const [showForm, setShowForm] = useState(false);
   const [newEvent, setNewEvent] = useState(emptyEvent());
 
@@ -29,12 +29,14 @@ export default function EventsPage({ events, actions }) {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Events</h2>
 
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Add Event
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setShowForm((s) => !s)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Add Event
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -50,7 +52,7 @@ export default function EventsPage({ events, actions }) {
         </div>
       )}
 
-      <EventsList events={events} onDelete={onDelete} />
+      <EventsList events={events} onDelete={canWrite ? onDelete : null} />
     </div>
   );
 }

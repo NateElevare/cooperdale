@@ -65,6 +65,7 @@ export default function MembersTable({
   onSort,
   attendance,
   events,
+  canWrite = true,
 }) {
   const [historyMemberId, setHistoryMemberId] = useState(null);
 
@@ -133,27 +134,33 @@ export default function MembersTable({
 
                   <td className="px-2 py-2 whitespace-nowrap w-px" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => onEdit?.(member)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Edit"
-                      >
-                        <FontAwesomeIcon icon={faPencil} />
-                      </button>
-                      <button
-                        onClick={() => onManageRelationships?.(member)}
-                        className="text-emerald-600 hover:text-emerald-500"
-                        title="Relationships"
-                      >
-                        <FontAwesomeIcon icon={faSitemap} />
-                      </button>
-                      <button
-                        onClick={() => onDelete(member.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Delete"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
+                      {canWrite && (
+                        <button
+                          onClick={() => onEdit?.(member)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit"
+                        >
+                          <FontAwesomeIcon icon={faPencil} />
+                        </button>
+                      )}
+                      {canWrite && (
+                        <button
+                          onClick={() => onManageRelationships?.(member)}
+                          className="text-emerald-600 hover:text-emerald-500"
+                          title="Relationships"
+                        >
+                          <FontAwesomeIcon icon={faSitemap} />
+                        </button>
+                      )}
+                      {canWrite && (
+                        <button
+                          onClick={() => onDelete(member.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete"
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

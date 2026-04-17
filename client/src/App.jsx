@@ -85,21 +85,30 @@ export default function App() {
     bootstrap();
   }, [fetchAll]);
 
+  const can = useCallback((resource, action) => {
+    if (!currentUser) return false;
+    if (currentUser.role === "admin") return true;
+    const perms = currentUser.permissions;
+    if (!perms) return true; // null = full access (backward compat)
+    return !!perms[resource]?.[action];
+  }, [currentUser]);
+
   const tabs = useMemo(() => {
-    const baseTabs = [
-      { id: "members", label: "Attendees" },
-      { id: "events", label: "Events" },
-      { id: "attendance", label: "Attendance" },
-      { id: "followup", label: "Follow Up" },
-      { id: "messages", label: "Messages" },
-      { id: "reports", label: "Reports" },
+    const allTabs = [
+      { id: "members", label: "Attendees", resource: "members" },
+      { id: "events", label: "Events", resource: "events" },
+      { id: "attendance", label: "Attendance", resource: "attendance" },
+      { id: "followup", label: "Follow Up", resource: "followup" },
+      { id: "messages", label: "Messages", resource: "messages" },
+      { id: "reports", label: "Reports", resource: "reports" },
     ];
 
+    const visible = allTabs.filter((t) => can(t.resource, "read"));
     if (currentUser?.role === "admin") {
-      return [...baseTabs, { id: "users", label: "Users" }];
+      return [...visible, { id: "users", label: "Users" }];
     }
-    return baseTabs;
-  }, [currentUser]);
+    return visible;
+  }, [currentUser, can]);
 
   useEffect(() => {
     if (!tabs.some((t) => t.id === activeTab)) {
@@ -225,10 +234,10 @@ export default function App() {
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 shadow-xl">
           <div className="p-5 sm:p-6">
             {activeTab === "members" && (
-              <MembersPage members={members} actions={actions} attendance={attendance} events={events} />
+              <MembersPage members={members} actions={actions} attendance={attendance} events={events} canWrite={can("members", "write")} />
             )}
             {activeTab === "events" && (
-              <EventsPage events={events} actions={actions} />
+              <EventsPage events={events} actions={actions} canWrite={can("events", "write")} />
             )}
             {activeTab === "attendance" && (
               <AttendancePage
@@ -236,6 +245,7 @@ export default function App() {
                 events={events}
                 attendance={attendance}
                 actions={actions}
+                canWrite={can("attendance", "write")}
               />
             )}
             {activeTab === "reports" && (
@@ -252,10 +262,11 @@ export default function App() {
                 followups={followups}
                 actions={actions}
                 currentUser={currentUser}
+                canWrite={can("followup", "write")}
               />
             )}
             {activeTab === "messages" && (
-              <MessagesPage currentUser={currentUser} />
+              <MessagesPage currentUser={currentUser} canWrite={can("messages", "write")} />
             )}
             {activeTab === "users" && currentUser.role === "admin" && (
               <UsersPage currentUser={currentUser} />

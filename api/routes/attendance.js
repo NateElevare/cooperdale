@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 
 const { Attendance, Member, Event } = require('../models');
-const { toIsoDateOnly } = require('../utils/dateOnly'); // same helper used everywhere
+const { toIsoDateOnly } = require('../utils/dateOnly');
+const { requirePermission } = require('../middleware/auth');
 
 function logError(...args) {
   const line = `[${new Date().toISOString()}] ERROR: ${args.map(a => a instanceof Error ? a.stack : String(a)).join(' ')}\n`;
@@ -12,7 +13,7 @@ function logError(...args) {
   console.error(line);
 }
 
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('attendance', 'read'), async (req, res) => {
   try {
     const attendance = await Attendance.findAll({
       // Optional: include details so the UI doesn't have to join client-side
@@ -34,7 +35,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('attendance', 'write'), async (req, res) => {
   try {
     const mId = Number(req.body.memberId);
     const eId = Number(req.body.eventId);
@@ -82,7 +83,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('attendance', 'write'), async (req, res) => {
   try {
     const attendanceId = Number(req.params.id);
     if (!Number.isFinite(attendanceId)) {

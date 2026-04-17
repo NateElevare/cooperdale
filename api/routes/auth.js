@@ -14,6 +14,7 @@ function sanitizeUser(user) {
     role: user.role,
     isActive: user.isActive,
     lastLoginAt: user.lastLoginAt,
+    permissions: user.permissions ?? null,
   };
 }
 

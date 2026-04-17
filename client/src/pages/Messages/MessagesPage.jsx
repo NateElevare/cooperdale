@@ -6,7 +6,7 @@ function formatTimestamp(value) {
   return new Date(value).toLocaleString();
 }
 
-export default function MessagesPage({ currentUser }) {
+export default function MessagesPage({ currentUser, canWrite = true }) {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [thread, setThread] = useState([]);
@@ -193,6 +193,7 @@ export default function MessagesPage({ currentUser }) {
             )}
           </div>
 
+          {canWrite && (
           <form onSubmit={sendMessage} className="border-t border-zinc-800 p-4">
             <div className="flex flex-col gap-2 sm:flex-row">
               <textarea
@@ -218,6 +219,7 @@ export default function MessagesPage({ currentUser }) {
               </button>
             </div>
           </form>
+          )}
         </section>
       </div>
     </div>

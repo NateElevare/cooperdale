@@ -22,7 +22,7 @@ const emptyMember = () => ({
   zip: "",
 });
 
-export default function MembersPage({ members, actions, attendance, events }) {
+export default function MembersPage({ members, actions, attendance, events, canWrite = true }) {
   const [showForm, setShowForm] = useState(false);
   const [newMember, setNewMember] = useState(emptyMember());
   const [editingMember, setEditingMember] = useState(null);
@@ -98,12 +98,14 @@ export default function MembersPage({ members, actions, attendance, events }) {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Attendees</h2>
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Add Attendee
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setShowForm((s) => !s)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Add Attendee
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -169,6 +171,7 @@ export default function MembersPage({ members, actions, attendance, events }) {
         onSort={handleSort}
         attendance={attendance}
         events={events}
+        canWrite={canWrite}
       />
 
       <div className="flex items-center justify-between mt-4 text-sm text-gray-600">

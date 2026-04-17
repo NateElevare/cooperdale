@@ -3,6 +3,7 @@ const router = express.Router();
 
 const { Member, Attendance, MemberRelationship } = require('../models');
 const { toIsoDateOnly } = require('../utils/dateOnly');
+const { requirePermission } = require('../middleware/auth');
 const normalizeName = (s) => (s || '').trim();
 const { logError } = require('../utils/logger');
 
@@ -39,7 +40,7 @@ function normalizeMemberDates(body) {
   };
 }
 
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('members', 'read'), async (req, res) => {
   try {
     const members = await Member.findAll({ order: [['id', 'DESC']] });
     res.json(members);
@@ -49,7 +50,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('members', 'write'), async (req, res) => {
   try {
     const dates = normalizeMemberDates(req.body);
 
@@ -104,7 +105,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/:id/relationships', async (req, res) => {
+router.get('/:id/relationships', requirePermission('members', 'read'), async (req, res) => {
   try {
     const memberId = Number(req.params.id);
     if (!Number.isFinite(memberId)) {
@@ -166,7 +167,7 @@ router.get('/:id/relationships', async (req, res) => {
   }
 });
 
-router.post('/:id/relationships', async (req, res) => {
+router.post('/:id/relationships', requirePermission('members', 'write'), async (req, res) => {
   try {
     const memberId = Number(req.params.id);
     const relatedMemberId = Number(req.body.relatedMemberId);
@@ -228,7 +229,7 @@ router.post('/:id/relationships', async (req, res) => {
   }
 });
 
-router.delete('/:id/relationships/:relationshipId', async (req, res) => {
+router.delete('/:id/relationships/:relationshipId', requirePermission('members', 'write'), async (req, res) => {
   try {
     const memberId = Number(req.params.id);
     const relationshipId = Number(req.params.relationshipId);
@@ -267,7 +268,7 @@ router.delete('/:id/relationships/:relationshipId', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('members', 'write'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) {
@@ -302,7 +303,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('members', 'write'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) {

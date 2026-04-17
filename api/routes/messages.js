@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const router = express.Router();
 
 const { Message, User } = require('../models');
+const { requirePermission } = require('../middleware/auth');
 const { logError } = require('../utils/logger');
 
 const MAX_BODY_LENGTH = 2000;
@@ -20,7 +21,7 @@ function sanitizeMessage(message) {
   };
 }
 
-router.get('/users', async (req, res) => {
+router.get('/users', requirePermission('messages', 'read'), async (req, res) => {
   try {
     const users = await User.findAll({
       where: {
@@ -37,7 +38,7 @@ router.get('/users', async (req, res) => {
   }
 });
 
-router.get('/thread/:otherUserId', async (req, res) => {
+router.get('/thread/:otherUserId', requirePermission('messages', 'read'), async (req, res) => {
   try {
     const me = req.auth.sub;
     const otherUserId = Number(req.params.otherUserId);
@@ -86,7 +87,7 @@ router.get('/thread/:otherUserId', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('messages', 'write'), async (req, res) => {
   try {
     const senderUserId = req.auth.sub;
     const recipientUserId = Number(req.body.recipientUserId);

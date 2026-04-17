@@ -3,10 +3,113 @@ import { UsersApi } from "../../api/users";
 
 const ROLES = ["editor", "admin"];
 
+const RESOURCES = [
+  { key: "members", label: "Attendees" },
+  { key: "events", label: "Events" },
+  { key: "attendance", label: "Attendance" },
+  { key: "followup", label: "Follow Up" },
+  { key: "messages", label: "Messages" },
+  { key: "reports", label: "Reports" },
+];
+
+const DEFAULT_PERMISSIONS = Object.fromEntries(
+  RESOURCES.map((r) => [r.key, { read: true, write: true }])
+);
+
+function PermissionsEditor({ userId, initial, onSave, onCancel }) {
+  const [perms, setPerms] = useState(() => {
+    if (!initial) return DEFAULT_PERMISSIONS;
+    // merge with defaults so all keys are present
+    return Object.fromEntries(
+      RESOURCES.map((r) => [r.key, { read: true, write: true, ...(initial[r.key] || {}) }])
+    );
+  });
+  const [saving, setSaving] = useState(false);
+
+  function toggle(resource, action) {
+    setPerms((prev) => {
+      const next = { ...prev, [resource]: { ...prev[resource], [action]: !prev[resource][action] } };
+      // read is required for write — if disabling read, also disable write
+      if (action === "read" && !next[resource].read) {
+        next[resource].write = false;
+      }
+      // if enabling write, also enable read
+      if (action === "write" && next[resource].write) {
+        next[resource].read = true;
+      }
+      return next;
+    });
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await onSave(perms);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 p-4">
+      <p className="text-xs text-zinc-400 mb-3">Permissions (ignored for admin users)</p>
+      <table className="text-sm w-full">
+        <thead>
+          <tr>
+            <th className="text-left py-1 pr-4 text-zinc-400 font-normal">Tab</th>
+            <th className="text-center py-1 px-3 text-zinc-400 font-normal">Read</th>
+            <th className="text-center py-1 px-3 text-zinc-400 font-normal">Write</th>
+          </tr>
+        </thead>
+        <tbody>
+          {RESOURCES.map((r) => (
+            <tr key={r.key} className="border-t border-zinc-800">
+              <td className="py-1.5 pr-4 text-zinc-200">{r.label}</td>
+              <td className="py-1.5 px-3 text-center">
+                <input
+                  type="checkbox"
+                  checked={!!perms[r.key]?.read}
+                  onChange={() => toggle(r.key, "read")}
+                  className="accent-blue-500"
+                />
+              </td>
+              <td className="py-1.5 px-3 text-center">
+                <input
+                  type="checkbox"
+                  checked={!!perms[r.key]?.write}
+                  onChange={() => toggle(r.key, "write")}
+                  disabled={!perms[r.key]?.read}
+                  className="accent-blue-500 disabled:opacity-40"
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Permissions"}
+        </button>
+        <button
+          onClick={onCancel}
+          className="rounded border border-zinc-700 px-3 py-1.5 text-xs hover:bg-zinc-800"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function UsersPage({ currentUser }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedPermissions, setExpandedPermissions] = useState(null);
   const [newUser, setNewUser] = useState({
     username: "",
     displayName: "",
@@ -58,6 +161,11 @@ export default function UsersPage({ currentUser }) {
     } catch (e) {
       setError(e.message || "Failed to update user");
     }
+  };
+
+  const savePermissions = async (userId, perms) => {
+    await updateUser(userId, { permissions: perms });
+    setExpandedPermissions(null);
   };
 
   const resetPassword = async (id) => {
@@ -133,64 +241,69 @@ export default function UsersPage({ currentUser }) {
         </button>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-900">
-            <tr>
-              <th className="px-3 py-2 text-left">Username</th>
-              <th className="px-3 py-2 text-left">Display Name</th>
-              <th className="px-3 py-2 text-left">Role</th>
-              <th className="px-3 py-2 text-left">Status</th>
-              <th className="px-3 py-2 text-left">Last Login</th>
-              <th className="px-3 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-t border-zinc-800">
-                <td className="px-3 py-2">{u.username}</td>
-                <td className="px-3 py-2">{u.displayName}</td>
-                <td className="px-3 py-2">
-                  <select
-                    className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1"
-                    value={u.role}
-                    onChange={(e) => updateUser(u.id, { role: e.target.value })}
-                  >
-                    {ROLES.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-3 py-2">{u.isActive ? "Active" : "Inactive"}</td>
-                <td className="px-3 py-2">
-                  {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "Never"}
-                </td>
-                <td className="px-3 py-2 space-x-2">
-                  <button
-                    className="rounded border border-zinc-700 px-2 py-1 hover:bg-zinc-800"
-                    onClick={() => updateUser(u.id, { isActive: !u.isActive })}
-                    disabled={u.id === currentUser.id && u.isActive}
-                    title={
-                      u.id === currentUser.id && u.isActive
-                        ? "You cannot deactivate yourself"
-                        : ""
-                    }
-                  >
-                    {u.isActive ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    className="rounded border border-zinc-700 px-2 py-1 hover:bg-zinc-800"
-                    onClick={() => resetPassword(u.id)}
-                  >
-                    Reset Password
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-3">
+        {users.map((u) => (
+          <div key={u.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-zinc-100">{u.displayName}</div>
+                <div className="text-xs text-zinc-400">{u.username}</div>
+              </div>
+
+              <select
+                className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm"
+                value={u.role}
+                onChange={(e) => updateUser(u.id, { role: e.target.value })}
+              >
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${u.isActive ? "border-green-700 text-green-400" : "border-zinc-700 text-zinc-500"}`}>
+                {u.isActive ? "Active" : "Inactive"}
+              </span>
+
+              <div className="flex gap-2">
+                <button
+                  className="rounded border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
+                  onClick={() => setExpandedPermissions(expandedPermissions === u.id ? null : u.id)}
+                >
+                  {expandedPermissions === u.id ? "Hide Permissions" : "Permissions"}
+                </button>
+                <button
+                  className="rounded border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
+                  onClick={() => updateUser(u.id, { isActive: !u.isActive })}
+                  disabled={u.id === currentUser.id && u.isActive}
+                  title={u.id === currentUser.id && u.isActive ? "You cannot deactivate yourself" : ""}
+                >
+                  {u.isActive ? "Deactivate" : "Activate"}
+                </button>
+                <button
+                  className="rounded border border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-800"
+                  onClick={() => resetPassword(u.id)}
+                >
+                  Reset PW
+                </button>
+              </div>
+            </div>
+
+            {u.lastLoginAt && (
+              <div className="text-xs text-zinc-500 mt-1">
+                Last login: {new Date(u.lastLoginAt).toLocaleString()}
+              </div>
+            )}
+
+            {expandedPermissions === u.id && (
+              <PermissionsEditor
+                userId={u.id}
+                initial={u.permissions}
+                onSave={(perms) => savePermissions(u.id, perms)}
+                onCancel={() => setExpandedPermissions(null)}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

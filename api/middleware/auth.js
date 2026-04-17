@@ -39,8 +39,41 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+function requirePermission(resource, action) {
+  return async (req, res, next) => {
+    try {
+      if (!req.auth) return res.status(401).json({ error: 'Authentication required' });
+
+      // Admins bypass all permission checks
+      if (req.auth.role === 'admin') return next();
+
+      // Load user from DB with per-request caching
+      if (!req._authUser) {
+        const { User } = require('../models');
+        const user = await User.findByPk(req.auth.sub, {
+          attributes: ['id', 'permissions', 'isActive'],
+        });
+        if (!user || !user.isActive) return res.status(401).json({ error: 'Unauthorized' });
+        req._authUser = user;
+      }
+
+      const perms = req._authUser.permissions;
+      // null permissions = full access (backward compatibility for existing editors)
+      if (!perms) return next();
+
+      if (!perms[resource]?.[action]) {
+        return res.status(403).json({ error: 'Permission denied' });
+      }
+      next();
+    } catch (e) {
+      next(e);
+    }
+  };
+}
+
 module.exports = {
   signAuthToken,
   authenticateToken,
   requireAdmin,
+  requirePermission,
 };

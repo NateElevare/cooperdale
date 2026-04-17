@@ -141,12 +141,14 @@ function FollowUpHistoryModal({ member, followups, onDelete, onClose }) {
                     )}
                     {f.notes && <p className="mt-1 text-sm text-zinc-300 whitespace-pre-wrap">{f.notes}</p>}
                   </div>
-                  <button
-                    onClick={() => onDelete(f.id)}
-                    className="text-xs text-red-400 hover:text-red-300 shrink-0"
-                  >
-                    Delete
-                  </button>
+                  {onDelete && (
+                    <button
+                      onClick={() => onDelete(f.id)}
+                      className="text-xs text-red-400 hover:text-red-300 shrink-0"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -164,7 +166,7 @@ function FollowUpHistoryModal({ member, followups, onDelete, onClose }) {
   );
 }
 
-export default function FollowUpPage({ members, attendance, followups, actions, currentUser }) {
+export default function FollowUpPage({ members, attendance, followups, actions, currentUser, canWrite = true }) {
   const [logModal, setLogModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
 
@@ -232,12 +234,14 @@ export default function FollowUpPage({ members, attendance, followups, actions, 
                         History ({followupCount})
                       </button>
                     )}
-                    <button
-                      onClick={() => setLogModal(member)}
-                      className="text-xs rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
-                    >
-                      Log Follow-up
-                    </button>
+                    {canWrite && (
+                      <button
+                        onClick={() => setLogModal(member)}
+                        className="text-xs rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+                      >
+                        Log Follow-up
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -259,7 +263,7 @@ export default function FollowUpPage({ members, attendance, followups, actions, 
         <FollowUpHistoryModal
           member={historyModal}
           followups={followups}
-          onDelete={actions.deleteFollowup}
+          onDelete={canWrite ? actions.deleteFollowup : null}
           onClose={() => setHistoryModal(null)}
         />
       )}

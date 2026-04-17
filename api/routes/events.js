@@ -3,9 +3,10 @@ const router = express.Router();
 
 const { Event } = require('../models');
 const { toIsoDateOnly } = require('../utils/dateOnly');
+const { requirePermission } = require('../middleware/auth');
 const { logError } = require('../utils/logger');
 
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('events', 'read'), async (req, res) => {
   try {
     const events = await Event.findAll({
       order: [
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('events', 'write'), async (req, res) => {
   try {
     const { name, type } = req.body;
     const date = toIsoDateOnly(req.body.date);
@@ -43,7 +44,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('events', 'write'), async (req, res) => {
   try {
     const eventId = Number(req.params.id);
     if (!Number.isFinite(eventId)) {
@@ -73,7 +74,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('events', 'write'), async (req, res) => {
   try {
     const eventId = Number(req.params.id);
     if (!Number.isFinite(eventId)) {

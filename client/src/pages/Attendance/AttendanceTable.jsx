@@ -27,13 +27,15 @@ export default function AttendanceTable({
                 <td className="px-4 py-3">{event?.name ?? "-"}</td>
                 <td className="px-4 py-3">{record.date}</td>
                 <td className="px-4 py-3">
-                  <button
-                    onClick={() => onDelete(record.id)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Delete"
-                  >
-                    Delete
-                  </button>
+                  {onDelete && (
+                    <button
+                      onClick={() => onDelete(record.id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Delete"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             );

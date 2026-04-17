@@ -9,7 +9,7 @@ const emptyAttendance = () => ({
   date: new Date().toISOString().split("T")[0],
 });
 
-export default function AttendancePage({ attendance, members, events, actions }) {
+export default function AttendancePage({ attendance, members, events, actions, canWrite = true }) {
   const [showForm, setShowForm] = useState(false);
   const [newAttendance, setNewAttendance] = useState(emptyAttendance());
 
@@ -73,12 +73,14 @@ export default function AttendancePage({ attendance, members, events, actions })
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Attendance Records</h2>
 
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Record Attendance
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setShowForm((s) => !s)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Record Attendance
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -102,7 +104,7 @@ export default function AttendancePage({ attendance, members, events, actions })
         attendance={attendance}
         members={members}
         events={events}
-        onDelete={onDelete}
+        onDelete={canWrite ? onDelete : null}
       />
     </div>
   );

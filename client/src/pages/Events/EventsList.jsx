@@ -13,13 +13,15 @@ export default function EventsList({ events, onDelete }) {
             </p>
           </div>
 
-          <button
-            onClick={() => onDelete(event.id)}
-            className="text-red-600 hover:text-red-800"
-            title="Delete event"
-          >
-            Delete
-          </button>
+          {onDelete && (
+            <button
+              onClick={() => onDelete(event.id)}
+              className="text-red-600 hover:text-red-800"
+              title="Delete event"
+            >
+              Delete
+            </button>
+          )}
         </div>
       ))}
     </div>

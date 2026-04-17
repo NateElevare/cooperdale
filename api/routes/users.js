@@ -14,7 +14,7 @@ router.use(requireAdmin);
 router.get('/', async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'username', 'displayName', 'role', 'isActive', 'lastLoginAt', 'createdAt'],
+      attributes: ['id', 'username', 'displayName', 'role', 'isActive', 'lastLoginAt', 'createdAt', 'permissions'],
       order: [['username', 'ASC']],
     });
     res.json(users);
@@ -48,7 +48,8 @@ router.post('/', async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-    const user = await User.create({ username, displayName, passwordHash, role, isActive });
+    const permissions = req.body.permissions ?? null;
+    const user = await User.create({ username, displayName, passwordHash, role, isActive, permissions });
 
     res.json({
       id: user.id,
@@ -58,6 +59,7 @@ router.post('/', async (req, res) => {
       isActive: user.isActive,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
+      permissions: user.permissions ?? null,
     });
   } catch (e) {
     logError(e);
@@ -88,6 +90,9 @@ router.put('/:id', async (req, res) => {
     if (typeof req.body.isActive === 'boolean') {
       updates.isActive = req.body.isActive;
     }
+    if (Object.prototype.hasOwnProperty.call(req.body, 'permissions')) {
+      updates.permissions = req.body.permissions ?? null;
+    }
 
     const user = await User.findByPk(id);
     if (!user) {
@@ -107,6 +112,7 @@ router.put('/:id', async (req, res) => {
       isActive: user.isActive,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
+      permissions: user.permissions ?? null,
     });
   } catch (e) {
     logError(e);
