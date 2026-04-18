@@ -1,28 +1,51 @@
 'use strict';
 
 /**
- * Imports attendance from "Attendence 2022 2023.xlsx".
+ * Imports attendance from an xlsx or csv attendance sheet.
  *
- * Row 4  : header — cols 3+ are Excel date serials
- * Row 5+ : member rows — col 0 = row number, col 1 = name, cols 3+ = "X"/"x"
+ * Header row: col 0 empty, col 1 "Name", col 2 count, cols 3+ = dates
+ * Data rows:  col 0 = row number, col 1 = name, cols 3+ = "X"/"x"
+ * CSV files have empty separator rows between each member row.
  *
  * Usage:
- *   node api/scripts/import-attendance.js              # import, skip unmatched
- *   node api/scripts/import-attendance.js --dry-run    # preview only
- *   node api/scripts/import-attendance.js --create-missing  # create DB records for unmatched names
+ *   node api/scripts/import-attendance.js                        # uses xlsx
+ *   node api/scripts/import-attendance.js --file="../file.csv"   # specify file
+ *   node api/scripts/import-attendance.js --dry-run
+ *   node api/scripts/import-attendance.js --create-missing
  */
 
 const path = require('path');
 const XLSX = require('xlsx');
 const { sequelize, Member, Event, Attendance } = require('../models');
 
-const XLSX_PATH = path.join(__dirname, '../../Attendence 2022 2023.xlsx');
 const DRY_RUN = process.argv.includes('--dry-run');
 const CREATE_MISSING = process.argv.includes('--create-missing');
+
+const fileArg = process.argv.find((a) => a.startsWith('--file='));
+const ROOT = path.resolve(__dirname, '../../');
+const FILENAME = fileArg ? fileArg.replace('--file=', '') : 'Attendence 2022 2023.xlsx';
+const FILE_PATH = path.resolve(ROOT, FILENAME);
 
 function excelSerialToISO(serial) {
   const info = XLSX.SSF.parse_date_code(serial);
   return `${info.y}-${String(info.m).padStart(2, '0')}-${String(info.d).padStart(2, '0')}`;
+}
+
+// Parses M/D/YYYY or M/D/YY date strings from CSV headers
+function csvDateToISO(str) {
+  const parts = String(str).trim().split('/');
+  if (parts.length !== 3) return null;
+  const [m, d, y] = parts.map(Number);
+  if (!m || !d || !y) return null;
+  const year = y < 100 ? 2000 + y : y;
+  return `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function parseDate(val) {
+  if (typeof val === 'number' && val > 1000) return excelSerialToISO(val);
+  const fromStr = csvDateToISO(val);
+  if (fromStr) return fromStr;
+  return null;
 }
 
 const TITLES = new Set(['pastor', 'dr', 'dr.', 'rev', 'rev.', 'elder', 'brother', 'sister', 'mr', 'mr.', 'mrs', 'mrs.', 'ms', 'ms.']);
@@ -95,21 +118,24 @@ function findMember(nameMap, members, rawName) {
 async function main() {
   if (DRY_RUN) console.log('=== DRY RUN — no changes will be written ===\n');
   if (CREATE_MISSING) console.log('=== --create-missing: unmatched names will be added to DB ===\n');
+  console.log(`Reading: ${FILE_PATH}\n`);
 
-  const wb = XLSX.readFile(XLSX_PATH);
+  const wb = XLSX.readFile(FILE_PATH);
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', header: 1 });
 
-  const headerRow = rows[0]; // header is now row 0; data rows start at row 1
-  const memberRows = rows.filter((r) => typeof r[0] === 'number' && r[0] > 0);
+  const headerRow = rows[0];
+  // Member rows: col 0 is a positive integer (as number or numeric string), skip empty separator rows
+  const memberRows = rows.filter((r) => {
+    const n = Number(r[0]);
+    return Number.isFinite(n) && n > 0 && String(r[1] || '').trim() !== '';
+  });
 
   // Build date list from header (cols 3+)
   const allDates = [];
   for (let i = 3; i < headerRow.length; i++) {
-    const serial = headerRow[i];
-    if (typeof serial === 'number' && serial > 0) {
-      allDates.push({ colIdx: i, iso: excelSerialToISO(serial) });
-    }
+    const iso = parseDate(headerRow[i]);
+    if (iso) allDates.push({ colIdx: i, iso });
   }
 
   // Only keep dates that have at least one X

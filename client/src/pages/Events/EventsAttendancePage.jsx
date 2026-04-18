@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faPencil } from "@fortawesome/free-solid-svg-icons";
 import MemberForm from "../Members/MemberForm";
 import { AttendanceApi } from "../../api/attendance";
 
@@ -219,9 +219,74 @@ function AttendancePanel({ event, allAttendance, members, actions, canWrite }) {
   );
 }
 
+// ── Edit event modal ──────────────────────────────────────────────────────────
+function EditEventModal({ event, onSave, onClose }) {
+  const [name, setName] = useState(event.name || "");
+  const [date, setDate] = useState(event.date || "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!date) return;
+    setSaving(true);
+    try {
+      await onSave({ name: name.trim() || event.name, date });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-xl bg-zinc-900 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-700">
+          <h3 className="font-semibold text-zinc-100">Edit Event</h3>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-100 text-xl leading-none">&times;</button>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 rounded border border-zinc-700 bg-zinc-800 text-zinc-100 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2 rounded border border-zinc-700 bg-zinc-800 text-zinc-100 text-sm"
+            />
+          </div>
+        </div>
+        <div className="flex gap-2 px-5 pb-5">
+          <button
+            onClick={handleSave}
+            disabled={saving || !date}
+            className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded border border-zinc-700 px-4 py-2 text-sm hover:bg-zinc-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Single event row ─────────────────────────────────────────────────────────
-function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete, onMove }) {
+function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete, onMove, onEdit }) {
   const [showMove, setShowMove] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const attendanceCount = useMemo(
     () => allAttendance.filter((r) => r.eventId === event.id).length,
     [allAttendance, event.id]
@@ -249,6 +314,13 @@ function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete, onMo
                 title="Move to different type"
               >
                 Move
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowEdit(true); }}
+                className="text-zinc-400 hover:text-blue-400 transition-colors p-1"
+                title="Edit event"
+              >
+                <FontAwesomeIcon icon={faPencil} className="text-xs" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
@@ -281,6 +353,14 @@ function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete, onMo
             Cancel
           </button>
         </div>
+      )}
+
+      {showEdit && (
+        <EditEventModal
+          event={event}
+          onSave={onEdit}
+          onClose={() => setShowEdit(false)}
+        />
       )}
     </div>
   );
@@ -316,6 +396,7 @@ export default function EventsAttendancePage({ events, attendance, members, acti
   const [openEventId, setOpenEventId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
+  const [newName, setNewName] = useState("");
   const [addingEvent, setAddingEvent] = useState(false);
 
   const typeLabel = EVENT_TYPES.find((t) => t.key === selectedType)?.label || selectedType;
@@ -331,9 +412,9 @@ export default function EventsAttendancePage({ events, attendance, members, acti
     if (!newDate) return;
     setAddingEvent(true);
     try {
-      await actions.addEvent({ name: typeLabel, type: selectedType, date: newDate });
-      // Open the newly created event (it will be the first after sort)
+      await actions.addEvent({ name: newName.trim() || typeLabel, type: selectedType, date: newDate });
       setShowAddForm(false);
+      setNewName("");
     } finally {
       setAddingEvent(false);
     }
@@ -351,7 +432,7 @@ export default function EventsAttendancePage({ events, attendance, members, acti
         {EVENT_TYPES.map((t) => (
           <button
             key={t.key}
-            onClick={() => { setSelectedType(t.key); setOpenEventId(null); setShowAddForm(false); }}
+            onClick={() => { setSelectedType(t.key); setOpenEventId(null); setShowAddForm(false); setNewName(""); }}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               selectedType === t.key
                 ? "bg-blue-600 text-white"
@@ -372,6 +453,13 @@ export default function EventsAttendancePage({ events, attendance, members, acti
                   onChange={(e) => setNewDate(e.target.value)}
                   className="px-2 py-1.5 rounded border border-zinc-700 bg-zinc-900 text-zinc-100 text-sm"
                 />
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder={typeLabel}
+                  className="px-2 py-1.5 rounded border border-zinc-700 bg-zinc-900 text-zinc-100 text-sm w-48"
+                />
                 <button
                   onClick={handleAddEvent}
                   disabled={addingEvent || !newDate}
@@ -380,7 +468,7 @@ export default function EventsAttendancePage({ events, attendance, members, acti
                   {addingEvent ? "Adding..." : "Add"}
                 </button>
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => { setShowAddForm(false); setNewName(""); }}
                   className="text-sm text-zinc-400 hover:text-zinc-200"
                 >
                   Cancel
@@ -415,6 +503,7 @@ export default function EventsAttendancePage({ events, attendance, members, acti
                 await actions.deleteEvent(event.id);
               }}
               onMove={(newType) => actions.updateEvent(event.id, { name: EVENT_TYPES.find((t) => t.key === newType)?.label || newType, type: newType, date: event.date })}
+              onEdit={(data) => actions.updateEvent(event.id, { ...data, type: event.type })}
             />
           ))}
         </div>
