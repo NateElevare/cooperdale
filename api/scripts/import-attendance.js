@@ -25,8 +25,14 @@ function excelSerialToISO(serial) {
   return `${info.y}-${String(info.m).padStart(2, '0')}-${String(info.d).padStart(2, '0')}`;
 }
 
+const TITLES = new Set(['pastor', 'dr', 'dr.', 'rev', 'rev.', 'elder', 'brother', 'sister', 'mr', 'mr.', 'mrs', 'mrs.', 'ms', 'ms.']);
+
 function normalizeName(raw) {
   return String(raw || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function stripTitles(name) {
+  return name.split(' ').filter((w) => !TITLES.has(w)).join(' ').trim();
 }
 
 function parseName(raw) {
@@ -41,17 +47,49 @@ function parseName(raw) {
 function buildNameMap(members) {
   const map = new Map();
   for (const m of members) {
-    const full = normalizeName(m.name);
-    map.set(full, m);
-    const computed = normalizeName(`${m.firstName} ${m.lastName}`);
-    if (computed !== full) map.set(computed, m);
+    // Index by normalized full name and by firstName+lastName (handles extra spaces in DB)
+    for (const variant of [m.name, `${m.firstName} ${m.lastName}`]) {
+      const key = normalizeName(variant);
+      if (key) map.set(key, m);
+    }
   }
   return map;
 }
 
-function findMember(nameMap, rawName) {
-  const key = normalizeName(rawName);
-  return nameMap.get(key) || null;
+function findMember(nameMap, members, rawName) {
+  const norm = normalizeName(rawName);
+
+  // 1. Exact match
+  if (nameMap.has(norm)) return nameMap.get(norm);
+
+  // 2. Title-stripped match (e.g. "Pastor David Phillips" -> "David Phillips")
+  const stripped = stripTitles(norm);
+  if (stripped !== norm && nameMap.has(stripped)) return nameMap.get(stripped);
+
+  // 3. First-name-is-prefix match for unique last names
+  //    e.g. "Pat Anderson" matches "Patricia Anderson", "Steve Ward" matches "Steven Ward"
+  const parts = stripped.split(' ');
+  if (parts.length >= 2) {
+    const spFirst = parts.slice(0, parts.length - 1).join(' ');
+    const spLast = parts[parts.length - 1];
+    const lastMatches = members.filter((m) => normalizeName(m.lastName) === spLast);
+    if (lastMatches.length === 1) {
+      // Only one person with that last name in DB — accept if first name starts with spreadsheet first name
+      const dbFirst = normalizeName(lastMatches[0].firstName);
+      if (dbFirst.startsWith(spFirst) || spFirst.startsWith(dbFirst)) {
+        return lastMatches[0];
+      }
+    } else if (lastMatches.length > 1) {
+      // Multiple people with that last name — require first-name prefix to be unambiguous
+      const prefixMatches = lastMatches.filter((m) => {
+        const dbFirst = normalizeName(m.firstName);
+        return dbFirst.startsWith(spFirst) || spFirst.startsWith(dbFirst);
+      });
+      if (prefixMatches.length === 1) return prefixMatches[0];
+    }
+  }
+
+  return null;
 }
 
 async function main() {
@@ -94,7 +132,7 @@ async function main() {
     const rawName = String(row[1] || '').trim();
     if (!rawName) continue;
 
-    let member = findMember(nameMap, rawName);
+    let member = findMember(nameMap, allMembers, rawName);
 
     if (!member) {
       if (CREATE_MISSING && !DRY_RUN) {
