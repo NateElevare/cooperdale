@@ -132,6 +132,10 @@ export default function App() {
         await EventsApi.create(event);
         await fetchAll();
       },
+      updateEvent: async (id, data) => {
+        await EventsApi.update(id, data);
+        await fetchAll();
+      },
       deleteEvent: async (id) => {
         await EventsApi.remove(id);
         await fetchAll();

@@ -220,11 +220,17 @@ function AttendancePanel({ event, allAttendance, members, actions, canWrite }) {
 }
 
 // ── Single event row ─────────────────────────────────────────────────────────
-function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete }) {
+function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete, onMove }) {
+  const [showMove, setShowMove] = useState(false);
   const attendanceCount = useMemo(
     () => allAttendance.filter((r) => r.eventId === event.id).length,
     [allAttendance, event.id]
   );
+
+  const otherTypes = EVENT_TYPES.filter((t) => {
+    const aliases = TYPE_ALIASES[t.key] || [t.key];
+    return !aliases.includes(event.type);
+  });
 
   return (
     <div className="rounded-xl border border-zinc-700 overflow-hidden">
@@ -233,19 +239,49 @@ function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete }) {
         onClick={onOpen}
       >
         <div className="font-medium text-zinc-100">{formatDate(event.date)}</div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-400">{attendanceCount} attended</span>
           {canWriteEvents && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="text-zinc-600 hover:text-red-400 transition-colors p-1"
-              title="Delete event"
-            >
-              <FontAwesomeIcon icon={faTrash} className="text-xs" />
-            </button>
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMove((s) => !s); }}
+                className="text-xs rounded border border-zinc-600 px-2 py-1 text-zinc-400 hover:bg-zinc-800"
+                title="Move to different type"
+              >
+                Move
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="text-zinc-600 hover:text-red-400 transition-colors p-1"
+                title="Delete event"
+              >
+                <FontAwesomeIcon icon={faTrash} className="text-xs" />
+              </button>
+            </>
           )}
         </div>
       </button>
+
+      {showMove && (
+        <div className="border-t border-zinc-700 bg-zinc-900/60 px-4 py-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <span className="text-xs text-zinc-400">Move to:</span>
+          {otherTypes.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => { onMove(t.key); setShowMove(false); }}
+              className="text-xs rounded border border-zinc-600 px-3 py-1 text-zinc-300 hover:bg-zinc-700"
+            >
+              {t.label}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowMove(false)}
+            className="text-xs text-zinc-500 hover:text-zinc-300 ml-1"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -378,6 +414,7 @@ export default function EventsAttendancePage({ events, attendance, members, acti
                 if (!window.confirm(`Delete "${event.name}" on ${event.date}? This will also remove all attendance records.`)) return;
                 await actions.deleteEvent(event.id);
               }}
+              onMove={(newType) => actions.updateEvent(event.id, { name: EVENT_TYPES.find((t) => t.key === newType)?.label || newType, type: newType, date: event.date })}
             />
           ))}
         </div>
