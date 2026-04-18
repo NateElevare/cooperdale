@@ -171,10 +171,10 @@ function FollowUpHistoryModal({ member, followups, onDelete, onClose }) {
 export default function FollowUpPage({ members, attendance, followups, actions, currentUser, canWrite = true }) {
   const [logModal, setLogModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
-  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
 
   function toggleGroup(weeks) {
-    setCollapsedGroups((prev) => {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(weeks)) next.delete(weeks);
       else next.add(weeks);
@@ -209,7 +209,7 @@ export default function FollowUpPage({ members, attendance, followups, actions, 
       <h2 className="text-2xl font-bold text-gray-800">Follow Up</h2>
 
       {groups.map(({ weeks, entries }) => {
-        const isCollapsed = collapsedGroups.has(weeks);
+        const isCollapsed = !expandedGroups.has(weeks);
         return (
         <div key={weeks} className="rounded-xl border border-zinc-700 bg-zinc-900/50 overflow-hidden">
           <button
