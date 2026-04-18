@@ -10,8 +10,7 @@ import { FollowupsApi } from "./api/followups";
 import { HttpError, setAuthToken, getAuthToken } from "./api/http";
 
 import MembersPage from "./pages/Members/MembersPage";
-import EventsPage from "./pages/Events/EventsPage";
-import AttendancePage from "./pages/Attendance/AttendancePage";
+import EventsAttendancePage from "./pages/Events/EventsAttendancePage";
 import ReportsPage from "./pages/Reports/ReportsPage";
 import LoginPage from "./pages/Auth/LoginPage";
 import UsersPage from "./pages/Users/UsersPage";
@@ -97,7 +96,6 @@ export default function App() {
     const allTabs = [
       { id: "members", label: "Attendees", resource: "members" },
       { id: "events", label: "Events", resource: "events" },
-      { id: "attendance", label: "Attendance", resource: "attendance" },
       { id: "followup", label: "Follow Up", resource: "followup" },
       { id: "messages", label: "Messages", resource: "messages" },
       { id: "reports", label: "Reports", resource: "reports" },
@@ -168,6 +166,11 @@ export default function App() {
         await AttendanceApi.remove(id);
         await fetchAll();
       },
+      // Lightweight attendance-only refresh (used by inline attendance toggles)
+      refreshAttendance: async () => {
+        const a = await AttendanceApi.list();
+        setAttendance(a);
+      },
       addFollowup: async (data) => {
         await FollowupsApi.create(data);
         await fetchAll();
@@ -204,14 +207,12 @@ export default function App() {
               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Church Attendance Tracker
               </h1>
-              <p className="mt-1 text-sm text-zinc-400">
-                Manage members, events, and track attendance
-              </p>
+      
             </div>
 
             <div className="flex gap-2 items-center">
               <span className="text-xs rounded-full border border-zinc-700 px-3 py-1 text-zinc-300">
-                {currentUser.displayName} ({currentUser.role})
+                {currentUser.displayName}
               </span>
               <button
                 className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800"
@@ -223,7 +224,7 @@ export default function App() {
           </div>
 
           <div className="mt-5">
-            <div className="inline-flex rounded-full border border-zinc-800 bg-zinc-900/60 p-1">
+            <div>
               <Tabs activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} />
             </div>
           </div>
@@ -237,15 +238,13 @@ export default function App() {
               <MembersPage members={members} actions={actions} attendance={attendance} events={events} canWrite={can("members", "write")} />
             )}
             {activeTab === "events" && (
-              <EventsPage events={events} actions={actions} canWrite={can("events", "write")} />
-            )}
-            {activeTab === "attendance" && (
-              <AttendancePage
-                members={members}
+              <EventsAttendancePage
                 events={events}
                 attendance={attendance}
+                members={members}
                 actions={actions}
-                canWrite={can("attendance", "write")}
+                canWriteEvents={can("events", "write")}
+                canWriteAttendance={can("attendance", "write")}
               />
             )}
             {activeTab === "reports" && (

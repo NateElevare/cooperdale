@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { Event } = require('../models');
+const { Event, Attendance } = require('../models');
 const { toIsoDateOnly } = require('../utils/dateOnly');
 const { requirePermission } = require('../middleware/auth');
 const { logError } = require('../utils/logger');
@@ -86,6 +86,8 @@ router.delete('/:id', requirePermission('events', 'write'), async (req, res) => 
     if (deletedCount === 0) {
       return res.status(404).json({ error: 'Event not found' });
     }
+
+    await Attendance.destroy({ where: { eventId } });
 
     res.json({ success: true });
   } catch (err) {

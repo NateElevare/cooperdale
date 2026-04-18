@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
 const MS_PER_DAY = 86400000;
 
@@ -169,6 +171,16 @@ function FollowUpHistoryModal({ member, followups, onDelete, onClose }) {
 export default function FollowUpPage({ members, attendance, followups, actions, currentUser, canWrite = true }) {
   const [logModal, setLogModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+
+  function toggleGroup(weeks) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(weeks)) next.delete(weeks);
+      else next.add(weeks);
+      return next;
+    });
+  }
 
   const groups = useMemo(() => getMissedGroups(members, attendance), [members, attendance]);
 
@@ -196,16 +208,22 @@ export default function FollowUpPage({ members, attendance, followups, actions, 
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Follow Up</h2>
 
-      {groups.map(({ weeks, entries }) => (
+      {groups.map(({ weeks, entries }) => {
+        const isCollapsed = collapsedGroups.has(weeks);
+        return (
         <div key={weeks} className="rounded-xl border border-zinc-700 bg-zinc-900/50 overflow-hidden">
-          <div className={`px-4 py-3 border-b border-zinc-700 ${weeks === 1 ? "bg-yellow-900/30" : weeks === 2 ? "bg-orange-900/30" : "bg-red-900/30"}`}>
+          <button
+            className={`w-full text-left px-4 py-3 flex items-center justify-between gap-2 ${weeks === 1 ? "bg-yellow-900/30" : weeks === 2 ? "bg-orange-900/30" : "bg-red-900/30"} ${isCollapsed ? "" : "border-b border-zinc-700"}`}
+            onClick={() => toggleGroup(weeks)}
+          >
             <h3 className="font-semibold text-zinc-100">
               {weeksLabel(weeks)}
               <span className="ml-2 text-sm font-normal text-zinc-400">{entries.length} {entries.length === 1 ? "person" : "people"}</span>
             </h3>
-          </div>
+            <FontAwesomeIcon icon={isCollapsed ? faChevronRight : faChevronDown} className="text-zinc-400 text-sm" />
+          </button>
 
-          <div className="divide-y divide-zinc-800">
+          {!isCollapsed && <div className="divide-y divide-zinc-800">
             {entries.map(({ member, lastAttended }) => {
               const lastFollowup = lastFollowupByMember[member.id];
               const followupCount = followups.filter((f) => f.memberId === member.id).length;
@@ -246,9 +264,10 @@ export default function FollowUpPage({ members, attendance, followups, actions, 
                 </div>
               );
             })}
-          </div>
+          </div>}
         </div>
-      ))}
+        );
+      })}
 
       {logModal && (
         <LogFollowUpModal

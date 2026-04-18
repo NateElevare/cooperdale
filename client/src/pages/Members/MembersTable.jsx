@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencil, faSitemap, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faPencil, faSitemap, faTrash, faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { calculateAge } from "../../utils/members";
 
 function SortTh({ label, sortField, sortKey, sortDir, onSort, mobileHidden = true }) {
@@ -101,7 +101,7 @@ export default function MembersTable({
                   onClick={() => toggleHistory(member.id)}
                 >
                   <td className="px-3 py-2 font-medium">
-                    <span className="mr-1 text-xs text-gray-400">{isHistoryOpen ? "▼" : "▶"}</span>
+                    <FontAwesomeIcon icon={isHistoryOpen ? faChevronDown : faChevronRight} className="mr-1 text-xs text-gray-400" />
                     {member.name}
                   </td>
 
