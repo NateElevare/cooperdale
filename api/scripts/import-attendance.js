@@ -23,7 +23,7 @@ const CREATE_MISSING = process.argv.includes('--create-missing');
 
 const fileArg = process.argv.find((a) => a.startsWith('--file='));
 const ROOT = path.resolve(__dirname, '../../');
-const FILENAME = fileArg ? fileArg.replace('--file=', '') : 'Attendence 2022 2023.xlsx';
+const FILENAME = fileArg ? fileArg.replace('--file=', '') : 'Attendence 2022 2023.csv';
 const FILE_PATH = path.resolve(ROOT, FILENAME);
 
 function excelSerialToISO(serial) {
