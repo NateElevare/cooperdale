@@ -232,8 +232,31 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
       });
     });
 
-    rows.forEach((row) => {
-      row.sort((a, b) => a.label.localeCompare(b.label));
+    // Build spouse map: nodeId -> spouseId (same-level pairs only)
+    const spouseOf = new Map();
+    rawEdges.forEach(({ from, to, relationType }) => {
+      if (relationType !== 'spouse') return;
+      const fl = levelsById.get(from);
+      const tl = levelsById.get(to);
+      if (fl !== undefined && fl === tl) {
+        if (!spouseOf.has(from)) spouseOf.set(from, to);
+        if (!spouseOf.has(to)) spouseOf.set(to, from);
+      }
+    });
+
+    // Build parent map: childId -> [parentIds] (one level up)
+    const parentsOf = new Map();
+    rawEdges.forEach(({ from, to }) => {
+      const fl = levelsById.get(from) ?? 0;
+      const tl = levelsById.get(to) ?? 0;
+      if (tl - fl === 1) {
+        if (!parentsOf.has(to)) parentsOf.set(to, []);
+        parentsOf.get(to).push(from);
+      }
+      if (fl - tl === 1) {
+        if (!parentsOf.has(from)) parentsOf.set(from, []);
+        parentsOf.get(from).push(to);
+      }
     });
 
     const levelWidths = rows.map((row) => row.length * nodeWidth + Math.max(0, row.length - 1) * gapX);
@@ -241,20 +264,63 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
     const svgHeight = rowCount * nodeHeight + Math.max(0, rowCount - 1) * gapY + padY * 2 + 12;
 
     const positioned = new Map();
+    const nodeXCenter = new Map(); // filled row-by-row for parent-position ordering
+
     rows.forEach((row, rowIndex) => {
-      const rowWidth = row.length * nodeWidth + Math.max(0, row.length - 1) * gapX;
+      // Group into couple-units (spouses adjacent) or singletons
+      const placed = new Set();
+      const units = [];
+
+      // Root member leads its row
+      const ordered = [...row].sort((a, b) => {
+        if (a.id === member.id) return -1;
+        if (b.id === member.id) return 1;
+        return 0;
+      });
+
+      for (const node of ordered) {
+        if (placed.has(node.id)) continue;
+        const spouseId = spouseOf.get(node.id);
+        const spouseNode = spouseId ? ordered.find((n) => n.id === spouseId) : null;
+        if (spouseNode && !placed.has(spouseId)) {
+          units.push([node, spouseNode]);
+          placed.add(node.id);
+          placed.add(spouseId);
+        } else {
+          units.push([node]);
+          placed.add(node.id);
+        }
+      }
+
+      // Sort units by average parent X (root unit always first)
+      units.sort((a, b) => {
+        if (a.some((n) => n.id === member.id)) return -1;
+        if (b.some((n) => n.id === member.id)) return 1;
+        const avgX = (nodes) => {
+          const xs = nodes.flatMap((n) =>
+            (parentsOf.get(n.id) || []).map((pid) => nodeXCenter.get(pid)).filter((x) => x !== undefined)
+          );
+          return xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : Infinity;
+        };
+        return avgX(a) - avgX(b);
+      });
+
+      const flatRow = units.flat();
+      const rowWidth = flatRow.length * nodeWidth + Math.max(0, flatRow.length - 1) * gapX;
       const startX = (svgWidth - rowWidth) / 2;
       const y = padY + rowIndex * (nodeHeight + gapY);
 
-      row.forEach((n, idx) => {
+      flatRow.forEach((n, idx) => {
         const x = startX + idx * (nodeWidth + gapX);
+        const cx = x + nodeWidth / 2;
+        nodeXCenter.set(n.id, cx);
         positioned.set(n.key, {
           ...n,
           x,
           y,
           w: nodeWidth,
           h: nodeHeight,
-          cx: x + nodeWidth / 2,
+          cx,
           cy: y + nodeHeight / 2,
         });
       });
