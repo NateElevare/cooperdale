@@ -196,23 +196,32 @@ function AttendancePanel({ event, allAttendance, members, actions, canWrite }) {
 
       {canWrite && (
         <div className="mt-3 border-t border-zinc-800 pt-3">
-          {showAddMember ? (
-            <MemberForm
-              value={newMember}
-              onChange={setNewMember}
-              onSave={handleSaveMember}
-              onCancel={() => { setShowAddMember(false); setNewMember(emptyMember()); }}
-              title="Quick Add Member"
-              saveLabel={savingMember ? "Saving..." : "Save Member"}
-            />
-          ) : (
-            <button
-              onClick={() => setShowAddMember(true)}
-              className="text-sm text-blue-400 hover:text-blue-300 underline"
-            >
-              + Add new member
-            </button>
-          )}
+          <button
+            onClick={() => setShowAddMember(true)}
+            className="text-sm text-blue-400 hover:text-blue-300 underline"
+          >
+            + Add new member
+          </button>
+        </div>
+      )}
+
+      {showAddMember && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4" onClick={() => { setShowAddMember(false); setNewMember(emptyMember()); }}>
+          <div className="w-full max-w-lg rounded-xl bg-zinc-900 shadow-xl overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-700">
+              <h3 className="font-semibold text-zinc-100">Quick Add Member</h3>
+              <button onClick={() => { setShowAddMember(false); setNewMember(emptyMember()); }} className="text-zinc-400 hover:text-zinc-100 text-xl leading-none">&times;</button>
+            </div>
+            <div className="px-5 py-4">
+              <MemberForm
+                value={newMember}
+                onChange={setNewMember}
+                onSave={handleSaveMember}
+                onCancel={() => { setShowAddMember(false); setNewMember(emptyMember()); }}
+                saveLabel={savingMember ? "Saving..." : "Save Member"}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -303,7 +312,10 @@ function EventRow({ event, allAttendance, canWriteEvents, onOpen, onDelete, onMo
         className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-800/50 text-left"
         onClick={onOpen}
       >
-        <div className="font-medium text-zinc-100">{formatDate(event.date)}</div>
+        <div>
+          <div className="font-medium text-zinc-100">{event.name || formatDate(event.date)}</div>
+          <div className="text-xs text-zinc-400 mt-0.5">{formatDate(event.date)}</div>
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-400">{attendanceCount} attended</span>
           {canWriteEvents && (
@@ -373,8 +385,8 @@ function AttendanceModal({ event, allAttendance, members, actions, canWrite, onC
       <div className="w-full max-w-md rounded-xl bg-zinc-900 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-700">
           <div>
-            <h3 className="font-semibold text-zinc-100">{formatDate(event.date)}</h3>
-            {event.name && <p className="text-xs text-zinc-400 mt-0.5">{event.name}</p>}
+            <h3 className="font-semibold text-zinc-100">{event.name || formatDate(event.date)}</h3>
+            <p className="text-xs text-zinc-400 mt-0.5">{formatDate(event.date)}</p>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-100 text-xl leading-none">&times;</button>
         </div>
