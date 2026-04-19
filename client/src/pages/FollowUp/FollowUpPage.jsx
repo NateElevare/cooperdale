@@ -4,7 +4,10 @@ import { faChevronDown, faChevronRight } from "@fortawesome/free-solid-svg-icons
 
 const MS_PER_DAY = 86400000;
 
+const CUTOFF_WEEKS = 10;
+
 function weeksLabel(weeks) {
+  if (weeks === CUTOFF_WEEKS) return `Missed ${CUTOFF_WEEKS}+ weeks`;
   if (weeks === 1) return "Missed 1 week";
   return `Missed ${weeks} weeks`;
 }
@@ -34,7 +37,8 @@ function getMissedGroups(members, attendance) {
     if (!last) continue; // never attended — skip
 
     const daysDiff = Math.round((refDate - new Date(last + "T00:00:00")) / MS_PER_DAY);
-    const weeks = Math.floor(daysDiff / 7);
+    const rawWeeks = Math.floor(daysDiff / 7);
+    const weeks = rawWeeks >= CUTOFF_WEEKS ? CUTOFF_WEEKS : rawWeeks;
 
     if (weeks === 0) continue; // attended this week — no follow-up needed
 
@@ -213,7 +217,7 @@ export default function FollowUpPage({ members, attendance, followups, actions, 
         return (
         <div key={weeks} className="rounded-xl border border-zinc-700 bg-zinc-900/50 overflow-hidden">
           <button
-            className={`w-full text-left px-4 py-3 flex items-center justify-between gap-2 ${weeks === 1 ? "bg-yellow-900/30" : weeks === 2 ? "bg-orange-900/30" : "bg-red-900/30"} ${isCollapsed ? "" : "border-b border-zinc-700"}`}
+            className={`w-full text-left px-4 py-3 flex items-center justify-between gap-2 ${weeks === 1 ? "bg-yellow-900/30" : weeks === 2 ? "bg-orange-900/30" : "bg-red-900/30"} ${weeks === CUTOFF_WEEKS ? "opacity-60" : ""} ${isCollapsed ? "" : "border-b border-zinc-700"}`}
             onClick={() => toggleGroup(weeks)}
           >
             <h3 className="font-semibold text-zinc-100">
