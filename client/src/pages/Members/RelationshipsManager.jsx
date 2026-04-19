@@ -244,16 +244,17 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
       }
     });
 
-    // Build parent map: childId -> [parentIds] (one level up)
+    // Build parent map: childId -> [parentIds] (any ancestor, used for column ordering)
     const parentsOf = new Map();
     rawEdges.forEach(({ from, to }) => {
       const fl = levelsById.get(from) ?? 0;
       const tl = levelsById.get(to) ?? 0;
-      if (tl - fl === 1) {
+      if (fl < tl) {
+        // from is above to — from is an ancestor of to
         if (!parentsOf.has(to)) parentsOf.set(to, []);
         parentsOf.get(to).push(from);
-      }
-      if (fl - tl === 1) {
+      } else if (tl < fl) {
+        // to is above from — to is an ancestor of from
         if (!parentsOf.has(from)) parentsOf.set(from, []);
         parentsOf.get(from).push(to);
       }
@@ -334,6 +335,9 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
       const from = positioned.get(String(edge.from));
       const to = positioned.get(String(edge.to));
       if (!from || !to) return;
+      // Skip same-row edges that aren't spouse connections (e.g. sibling lines cause visual clutter)
+      const sameRow = Math.abs(from.y - to.y) < 1;
+      if (sameRow && edge.relationType !== 'spouse') return;
       seenPairs.add(pairKey);
       positionedEdges.push({ from, to });
     });
