@@ -335,9 +335,13 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
       const from = positioned.get(String(edge.from));
       const to = positioned.get(String(edge.to));
       if (!from || !to) return;
-      // Skip same-row edges that aren't spouse connections (e.g. sibling lines cause visual clutter)
       const sameRow = Math.abs(from.y - to.y) < 1;
+      const fromLevel = levelsById.get(edge.from) ?? 0;
+      const toLevel = levelsById.get(edge.to) ?? 0;
+      const levelDiff = Math.abs(fromLevel - toLevel);
+      // Only draw spouse edges (same row) or direct parent-child (adjacent levels)
       if (sameRow && edge.relationType !== 'spouse') return;
+      if (!sameRow && levelDiff !== 1) return;
       seenPairs.add(pairKey);
       positionedEdges.push({ from, to });
     });
@@ -390,21 +394,43 @@ function FamilyTreeEditor({ member, members, onRootRelationshipsUpdated }) {
         <div className="space-y-4">
           <div className="overflow-x-auto rounded border border-zinc-700 bg-zinc-900/50 p-2">
             <svg width={layout.width} height={layout.height} role="img" aria-label="Family tree graph">
-              {layout.edges.map((edge, idx) => {
-                const fromIsAbove = edge.from.cy <= edge.to.cy;
-                const y1 = fromIsAbove ? edge.from.y + edge.from.h : edge.from.y;
-                const y2 = fromIsAbove ? edge.to.y : edge.to.y + edge.to.h;
-                const midY = (y1 + y2) / 2;
-                const sameRow = Math.abs(edge.from.y - edge.to.y) < 1;
-                const path = sameRow
-                  ? `M ${edge.from.cx} ${edge.from.cy} H ${edge.to.cx}`
-                  : `M ${edge.from.cx} ${y1} V ${midY} H ${edge.to.cx} V ${y2}`;
+              {(() => {
+                const spouseEdges = [];
+                const childGroups = new Map();
+                layout.edges.forEach((edge) => {
+                  const sameRow = Math.abs(edge.from.y - edge.to.y) < 1;
+                  if (sameRow) { spouseEdges.push(edge); return; }
+                  const parent = edge.from.cy < edge.to.cy ? edge.from : edge.to;
+                  const child  = edge.from.cy < edge.to.cy ? edge.to   : edge.from;
+                  if (!childGroups.has(parent.key)) childGroups.set(parent.key, { parent, children: [] });
+                  childGroups.get(parent.key).children.push(child);
+                });
                 return (
-                  <g key={`${edge.from.key}-${edge.to.key}-${idx}`} stroke="#94a3b8" strokeWidth="1.5" fill="none">
-                    <path d={path} />
+                  <g stroke="#94a3b8" strokeWidth="1.5" fill="none">
+                    {Array.from(childGroups.values()).map(({ parent, children }) => {
+                      const topY = parent.y + parent.h;
+                      const midY = (topY + children[0].y) / 2;
+                      const xs = children.map((c) => c.cx);
+                      const leftX = Math.min(...xs);
+                      const rightX = Math.max(...xs);
+                      return (
+                        <g key={parent.key}>
+                          <path d={`M ${parent.cx} ${topY} V ${midY}`} />
+                          {leftX < rightX && <path d={`M ${leftX} ${midY} H ${rightX}`} />}
+                          {children.map((child) => (
+                            <path key={child.key} d={`M ${child.cx} ${midY} V ${child.y}`} />
+                          ))}
+                        </g>
+                      );
+                    })}
+                    {spouseEdges.map((edge, idx) => {
+                      const left  = edge.from.cx < edge.to.cx ? edge.from : edge.to;
+                      const right = edge.from.cx < edge.to.cx ? edge.to   : edge.from;
+                      return <path key={idx} d={`M ${left.x + left.w} ${left.cy} H ${right.x}`} />;
+                    })}
                   </g>
                 );
-              })}
+              })()}
 
               {layout.nodes.map((n) => {
                 const isSelected = selectedNodeId === n.id;
